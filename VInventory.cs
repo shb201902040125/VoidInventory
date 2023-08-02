@@ -8,15 +8,21 @@ using System.Threading.Tasks;
 using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
+using Terraria.ModLoader.IO;
 
 namespace VoidInventory
 {
     public class VInventory
     {
+        static Dictionary<Version, Action<VInventory, TagCompound>> LoadMethod = new();
         internal Dictionary<int, List<Item>> items = new();
         internal List<RecipeTask> recipeTasks = new();
         Task mergaTask = null;
         Queue<Item> mergaQueue = new();
+        static VInventory()
+        {
+            LoadMethod[new Version(0, 0, 0, 1)] = Load_0001;
+        }
         static List<Item> SplitItems(Item item)
         {
             List<Item> list = new();
@@ -53,7 +59,7 @@ namespace VoidInventory
                 mergaQueue.Enqueue(toInner);
             }
         }
-        void Merga_Inner(Item item)
+        void Merga_Inner(Item item, bool ignoreRecipe = false)
         {
             List<Item> willPuts = SplitItems(item);
             if (items.TryGetValue(item.type, out List<Item> held))
@@ -96,7 +102,10 @@ namespace VoidInventory
             }
             else
             {
-                TryFinishRecipeTasks();
+                if (!ignoreRecipe)
+                {
+                    TryFinishRecipeTasks();
+                }
                 mergaTask = null;
             }
         }
@@ -160,13 +169,13 @@ namespace VoidInventory
             }
             return false;
         }
-        public bool TryPickOut(int type,int stackRequire,out int outCount, out List<Item> outItems)
+        public bool TryPickOut(int type, int stackRequire, out int outCount, out List<Item> outItems)
         {
             outItems = new();
             int require = stackRequire;
             if (items.TryGetValue(type, out var held))
             {
-                for(int i=held.Count-1;i>=0;i--)
+                for (int i = held.Count - 1; i >= 0; i--)
                 {
                     int count = Math.Min(held[i].stack, stackRequire);
                     stackRequire -= count;
@@ -189,6 +198,37 @@ namespace VoidInventory
             }
             outCount = require - stackRequire;
             return outCount == 0;
+        }
+        internal void Save(TagCompound tag)
+        {
+            tag[nameof(Version)] = "0.0.0.1";
+            TagCompound sub = new();
+            List<List<Item>> _items = new();
+            foreach (var pair in items)
+            {
+                _items.Add(pair.Value);
+            }
+            sub[nameof(items)] = _items;
+            tag[nameof(sub)] = sub;
+        }
+        internal void Load(TagCompound tag)
+        {
+            if (tag.TryGet(nameof(Version), out string version) && Version.TryParse(version, out var v) && LoadMethod.TryGetValue(v, out var loadMethod))
+            {
+                loadMethod(this, tag);
+            }
+        }
+        static void Load_0001(VInventory inventory, TagCompound tag)
+        {
+            List<List<Item>> _items;
+            if (!tag.TryGet("sub", out TagCompound sub) || !sub.TryGet(nameof(items), out _items))
+            {
+                return;
+            }
+            foreach (var list in _items)
+            {
+                list.ForEach(i => inventory.Merga_Inner(i, true));
+            }
         }
     }
 }
