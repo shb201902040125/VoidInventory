@@ -1,0 +1,3 @@
+displayName = Void Inventory
+author = SilverMoon
+version = 0.1
