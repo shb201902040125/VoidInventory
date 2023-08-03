@@ -28,23 +28,23 @@ namespace VoidInventory
             TaskState = state;
             CountTarget = count > 0 ? (state == 0 ? 1 : (state == 1 ? 10 : -1)) : count;
         }
-        internal void TryFinish(Dictionary<int, List<Item>> items, out bool finishAtLeastOnce, out bool finishAll)
+        internal void TryFinish(VInventory inv, out bool finishAtLeastOnce, out bool finishAll)
         {
             switch (TaskState)
             {
                 case 0:
                     {
-                        TryFinish_0(items, out finishAtLeastOnce, out finishAll);
+                        TryFinish_0(inv, out finishAtLeastOnce, out finishAll);
                         return;
                     }
                 case 1:
                     {
-                        TryFinish_1(items, out finishAtLeastOnce, out finishAll);
+                        TryFinish_1(inv, out finishAtLeastOnce, out finishAll);
                         return;
                     }
                 case 2:
                     {
-                        TryFinish_2(items, out finishAtLeastOnce, out finishAll);
+                        TryFinish_2(inv, out finishAtLeastOnce, out finishAll);
                         return;
                     }
                 default:
@@ -55,13 +55,13 @@ namespace VoidInventory
                     }
             }
         }
-        void TryFinish_0(Dictionary<int, List<Item>> items, out bool finishAtLeastOnce, out bool finishAll)
+        void TryFinish_0(VInventory inv, out bool finishAtLeastOnce, out bool finishAll)
         {
             finishAtLeastOnce = false;
             finishAll = true;
             if (CountTarget > 0)
             {
-                while(DoRecipe(items))
+                while(DoRecipe(inv))
                 {
                     finishAtLeastOnce = true;
                     finishAll = --CountTarget == 0;
@@ -72,10 +72,10 @@ namespace VoidInventory
                 }
             }
         }
-        void TryFinish_1(Dictionary<int, List<Item>> items, out bool finishAtLeastOnce, out bool finishAll)
+        void TryFinish_1(VInventory inv, out bool finishAtLeastOnce, out bool finishAll)
         {
             int count = 0;
-            if (items.TryGetValue(RecipeTarget.createItem.type, out var held) && (count = held.Sum(i => i.stack)) >= CountTarget)
+            if (inv.items.TryGetValue(RecipeTarget.createItem.type, out var held) && (count = held.Sum(i => i.stack)) >= CountTarget)
             {
                 finishAtLeastOnce = false;
                 finishAll = true;
@@ -83,7 +83,7 @@ namespace VoidInventory
             }
             finishAtLeastOnce = false;
             finishAll = false;
-            while(DoRecipe(items))
+            while(DoRecipe(inv))
             {
                 count++;
                 finishAtLeastOnce = true;
@@ -94,16 +94,16 @@ namespace VoidInventory
                 }
             }
         }
-        void TryFinish_2(Dictionary<int, List<Item>> items, out bool finishAtLeastOnce, out bool finishAll)
+        void TryFinish_2(VInventory inv, out bool finishAtLeastOnce, out bool finishAll)
         {
             finishAtLeastOnce = false;
             finishAll = false;
-            while(DoRecipe(items))
+            while(DoRecipe(inv))
             {
                 finishAtLeastOnce = true;
             }
         }
-        bool DoRecipe(Dictionary<int, List<Item>> items)
+        bool DoRecipe(VInventory inv)
         {
             Player player = Main.LocalPlayer;
             if (RecipeTarget.requiredTile.All(tile =>
@@ -123,11 +123,11 @@ namespace VoidInventory
                 return false;
             }
             Dictionary<int, int> used = new();
-            int HowManyCanUse(int type,out Dictionary<int,int> useWhat)
+            int HowManyCanUse(int type,int howManyNeed,out Dictionary<int,int> useWhat)
             {
                 int number = 0;
                 useWhat = new();
-                if(items.TryGetValue(type , out var held))
+                if(inv.items.TryGetValue(type , out var held))
                 {
                     number = held.Sum(i => i.stack);
                     if(used.TryGetValue(type,out int useNumber))
@@ -135,33 +135,46 @@ namespace VoidInventory
                         number -= useNumber;
                     }
                     useWhat[type] = number;
+                    if (howManyNeed - number <= 0)
+                    {
+                        useWhat[type] = howManyNeed;
+                        goto toEnd;
+                    }
+                    howManyNeed -= number;
                 }
                 foreach (RecipeGroup group in RecipeGroup.recipeGroups.Values)
                 {
-                    foreach (int heldType in items.Keys)
+                    foreach (int heldType in inv.items.Keys)
                     {
                         if (heldType == type)
                         {
                             continue;
                         }
-                        if (group.ContainsItem(heldType))
+                        if (group.ContainsItem(type) && group.ContainsItem(heldType))
                         {
-                            number = items[heldType].Sum(i => i.stack);
+                            number = inv.items[heldType].Sum(i => i.stack);
                             if (used.TryGetValue(heldType, out int useNumber))
                             {
                                 number -= useNumber;
                             }
                             useWhat[heldType] = number;
+                            if (howManyNeed - number <= 0)
+                            {
+                                useWhat[heldType] = howManyNeed;
+                                goto toEnd;
+                            }
+                            howManyNeed -= number;
                         }
                     }
                 }
+            toEnd:;
                 return useWhat.Sum(pair => pair.Value);
             }
             void ConsumeItems(Dictionary<int, int> useWhat)
             {
                 foreach(var usetype in useWhat.Keys)
                 {
-                    var list = items[usetype];
+                    var list = inv.items[usetype];
                     for(int i=list.Count-1; i>=0; i--)
                     {
                         int consume = Math.Min(list[i].stack, useWhat[usetype]);
@@ -178,7 +191,7 @@ namespace VoidInventory
             List<Dictionary<int, int>> useList = new();
             foreach (var required in RecipeTarget.requiredItem)
             {
-                if (HowManyCanUse(required.type, out var map) >= required.stack)
+                if (HowManyCanUse(required.type,required.stack, out var map) >= required.stack)
                 {
                     useList.Add(map);
                 }
@@ -188,6 +201,8 @@ namespace VoidInventory
                 }
             }
             useList.ForEach(ConsumeItems);
+            Item item = new(RecipeTarget.createItem.type, RecipeTarget.createItem.stack);
+            inv.Merga(ref item);
             return true;
         }
     }
