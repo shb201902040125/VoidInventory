@@ -1,1 +1,12 @@
-# This file will automatically update with entries for new content after a build and reload
+Keybinds.VoidInventory.DisplayName: Void Inventory
+
+Func: {
+	0: Run X times
+	1: Keep X number
+	2: Keep runing
+}
+
+Detail: Detail
+Group: RecipeGroup
+Tile: Require Tiles
+Condition: Condition

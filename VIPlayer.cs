@@ -1,16 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Terraria.ModLoader;
-using Terraria.ModLoader.IO;
+﻿using Terraria.ModLoader.IO;
 
 namespace VoidInventory
 {
-    public class VIPlayer:ModPlayer
+    public class VIPlayer : ModPlayer
     {
-        VInventory vInventory = new();
+        public VInventory vInventory = new();
         public override void PostUpdate()
         {
             vInventory.NormalUpdateCheck();

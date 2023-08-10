@@ -1,0 +1,12 @@
+Keybinds.VoidInventory.DisplayName: 虚空背包
+
+Func: {
+	0: 执行X次
+	1: 维持X个
+	2: 持续执行
+}
+
+Detail: 详细
+Group: 合成组
+Tile: 合成站
+Condition: 条件

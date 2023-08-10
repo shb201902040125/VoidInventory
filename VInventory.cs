@@ -1,13 +1,4 @@
-﻿using Harmony;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using Terraria;
-using Terraria.ID;
-using Terraria.ModLoader;
+﻿using System.Threading.Tasks;
 using Terraria.ModLoader.IO;
 
 namespace VoidInventory
@@ -154,7 +145,7 @@ namespace VoidInventory
         {
             foreach (RecipeTask task in recipeTasks)
             {
-                task.TryFinish(items, out bool reTry, out _);
+                task.TryFinish(this, out bool reTry, out _);
                 if (reTry)
                 {
                     TryFinishRecipeTasks();
