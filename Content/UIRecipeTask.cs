@@ -111,11 +111,28 @@ namespace VoidInventory.Content
             else if (down[2]) Change(1, 15);
             else if (down[3]) Change(1, 4);
             else timer = 0;
-            /*if (type == 0) Lave =;
-            else Has =;*/
+            /*if (type > 0) Has =;*/
             if (enable)
             {
-                //DoRecipe
+                switch (type)
+                {
+                    case 0:
+                        if (Lave > 0)
+                        {
+                            //DoRecipe
+                            Lave--;
+                        };
+                        break;
+                    case 1:
+                        if (Has < Max)
+                        {
+                            //DoRecipe
+                        };
+                        break;
+                    case 2:
+                        //DoRecipe
+                        break;
+                }
             }
         }
         private void Change(int count, int frame)
