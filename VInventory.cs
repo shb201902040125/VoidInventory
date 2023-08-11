@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Linq;
+using System.Threading.Tasks;
 using Terraria.ModLoader.IO;
 
 namespace VoidInventory
@@ -10,6 +11,8 @@ namespace VoidInventory
         internal List<RecipeTask> recipeTasks = new();
         Task mergaTask = null;
         Queue<Item> mergaQueue = new();
+        Dictionary<int, int> tileMap = new();
+        internal bool HasWater, HasLava, HasHoney, HasShimmer;
         static VInventory()
         {
             LoadMethod[new Version(0, 0, 0, 1)] = Load_0001;
@@ -36,46 +39,65 @@ namespace VoidInventory
                 mergaTask.Start();
             }
         }
+        /// <summary>
+        /// 合并物品
+        /// </summary>
+        /// <param name="item"></param>
         public void Merga(ref Item item)
         {
             Item toInner = item;
             item = new(ItemID.None);
             if (mergaTask is null)
             {
+                //未有合并线程，创建并启动合并线程
                 mergaTask = new(() => Merga_Inner(toInner));
                 mergaTask.Start();
             }
             else
             {
+                //已有合并线程，添加到任务队列
                 mergaQueue.Enqueue(toInner);
             }
         }
         void Merga_Inner(Item item, bool ignoreRecipe = false)
         {
+            //将物品拆分(防止超出堆叠)
             List<Item> willPuts = SplitItems(item);
             if (items.TryGetValue(item.type, out List<Item> held))
             {
+                //已有该类物品，尝试进行堆入
                 int ptr;
                 foreach (Item putItem in willPuts)
                 {
+                    //ptr表示正在进行堆入的索引，只能增加
+                    //小于此索引的物品已经堆满，下一个物品堆入时直接跳过，以节省计算
+                    //放在内部而不是foreach外部是因为无法确认ItemLoader.CanStack是否会出现变化
                     ptr = 0;
                     while (true)
                     {
+                        //表示索引已经达到队尾，说明已经无处可堆，直接将切分的物品加入队尾
+                        //此切分物品可能经过分堆，不是满堆，因此此时ptr不增加
                         if (ptr >= held.Count)
                         {
                             held.Add(putItem);
                             break;
                         }
                         Item container = held[ptr];
+                        //满堆或无法接受堆叠则后移ptr
                         if (container.stack == container.maxStack || !ItemLoader.CanStack(container, putItem))
                         {
                             ptr++;
                             continue;
                         }
+                        //计算移动堆叠数
                         int move = Math.Min(container.maxStack - container.stack, putItem.stack);
+                        //容器增加堆叠
                         container.stack += move;
+                        //物品减少堆叠
                         putItem.stack -= move;
-                        ptr++;
+                        //容器满堆则后移ptr
+                        ptr += container.stack == container.maxStack ? 1 : 0;
+                        //物品堆完，进入下一个要堆的物品
                         if (putItem.IsAir)
                         {
                             break;
@@ -85,21 +107,30 @@ namespace VoidInventory
             }
             else
             {
+                //未有该种物品，直接将拆分结果设为储存
                 items[item.type] = willPuts;
             }
+            //检查合并任务队列是否清空
             if (mergaQueue.TryDequeue(out Item nextItem))
             {
+                //继续合并
                 Merga_Inner(nextItem);
             }
             else
             {
+                //加载物品时不进行合成尝试
                 if (!ignoreRecipe)
                 {
                     TryFinishRecipeTasks();
                 }
+                //清除合并线程
                 mergaTask = null;
             }
         }
+        /// <summary>
+        /// 将背包里所有物品进行合并(以压缩空间)
+        /// 逻辑与<see cref="Merga_Inner(Item, bool)"/>相同
+        /// </summary>
         public void MergaAllInInventory()
         {
             var buffer = items;
@@ -127,7 +158,7 @@ namespace VoidInventory
                             int move = Math.Min(container.maxStack - container.stack, item.stack);
                             container.stack += move;
                             item.stack -= move;
-                            ptr++;
+                            ptr += container.stack == container.maxStack ? 1 : 0;
                             if (item.IsAir)
                             {
                                 break;
@@ -141,17 +172,45 @@ namespace VoidInventory
                 }
             }
         }
+        /// <summary>
+        /// 进行合成尝试
+        /// </summary>
         void TryFinishRecipeTasks()
         {
+            //刷新物块映射
+            MapTileAsAdj();
             foreach (RecipeTask task in recipeTasks)
             {
-                task.TryFinish(this, out bool reTry, out _);
+                //如果完成了任意一次合成，说明背包物品发生变化，需要重新刷新物块映射并尝试合成
+                task.TryFinish(this, false, out bool reTry, out _);
                 if (reTry)
                 {
                     TryFinishRecipeTasks();
                 }
             }
         }
+        /// <summary>
+        /// 刷新物块映射
+        /// </summary>
+        void MapTileAsAdj()
+        {
+            tileMap.Clear();
+            foreach(var pair in items.Values)
+            {
+                tileMap.Add(pair[0].createTile, pair.Sum(i => i.stack));
+            }
+            tileMap.Remove(-1);
+            HasWater = items.ContainsKey(ItemID.WaterBucket) || items.ContainsKey(ItemID.BottomlessBucket);
+            HasLava = items.ContainsKey(ItemID.LavaBucket) || items.ContainsKey(ItemID.BottomlessLavaBucket);
+            HasHoney = items.ContainsKey(ItemID.HoneyBucket) || items.ContainsKey(ItemID.BottomlessHoneyBucket);
+            HasShimmer = items.ContainsKey(ItemID.BottomlessShimmerBucket);
+        }
+        /// <summary>
+        /// 返回是否持有指定类型的物品，并给出物品列表
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="heldItems"></param>
+        /// <returns></returns>
         public bool HasItem(int type, out List<Item> heldItems)
         {
             if (items.TryGetValue(type, out heldItems))
@@ -160,6 +219,14 @@ namespace VoidInventory
             }
             return false;
         }
+        /// <summary>
+        /// 从库存中提出指定类型的物品指定个数，返回是否完全提出成功。并给出提出数和提出物品列表
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="stackRequire"></param>
+        /// <param name="outCount"></param>
+        /// <param name="outItems"></param>
+        /// <returns></returns>
         public bool TryPickOut(int type, int stackRequire, out int outCount, out List<Item> outItems)
         {
             outItems = new();
@@ -220,6 +287,22 @@ namespace VoidInventory
             {
                 list.ForEach(i => inventory.Merga_Inner(i, true));
             }
+            inventory.MergaAllInInventory();
+        }
+        internal bool CountTile(int countNeed, params int[] tileNeeds)
+        {
+            foreach (var need in tileNeeds)
+            {
+                if (tileMap.TryGetValue(need, out var count))
+                {
+                    countNeed -= count;
+                    if (countNeed <= 0)
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
         }
     }
 }
