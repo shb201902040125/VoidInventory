@@ -15,16 +15,25 @@ namespace VoidInventory.Content
         public int id;
         public int type;
         public bool enable;
+        /// <summary>
+        /// 剩余执行次数
+        /// </summary>
         public int Lave
         {
             get { return time[0]; }
             set { time[0] = value; }
         }
+        /// <summary>
+        /// 当前拥有数
+        /// </summary>
         public int Has
         {
             get { return time[1]; }
             set { time[1] = value; }
         }
+        /// <summary>
+        /// 保持多少数量
+        /// </summary>
         public int Max
         {
             get { return time[2]; }
@@ -135,6 +144,12 @@ namespace VoidInventory.Content
                 }
             }
         }
+        private int RequireCount(int itemType)
+        {
+            //player.checkItemCount(itemType)
+            int count = 0;
+            return count;
+        }
         private void Change(int count, int frame)
         {
             if (type == 2) return;
@@ -243,7 +258,7 @@ namespace VoidInventory.Content
                         {
                             ingredient.DrawSelf(sb);
                             var font = FontAssets.MouseText.Value;
-                            int amount = 3;//player.itemCount
+                            int amount = RequireCount(ingredient.ContainedItem.type);
                             string text = amount.ToString();
                             Vector2 origin = font.MeasureString(text) / 2f;
                             ChatManager.DrawColorCodedStringWithShadow(sb, font, text, ingredient.Pos()
@@ -322,7 +337,7 @@ namespace VoidInventory.Content
                                 };
                                 groupItem.Events.OnUpdate += uie =>
                                 {
-                                    groupItem.ContainedItem.stack = stack;
+                                    groupItem.ContainedItem.stack = RequireCount(groupItem.ContainedItem.type);
                                     groupItem.StackColor = groupItem.ContainedItem.stack >= stack ? G : R;
                                 };
                                 ui.detail.AddElement(groupItem);
