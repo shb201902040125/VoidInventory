@@ -10,3 +10,6 @@ Detail: 详细
 Group: 合成组
 Tile: 合成站
 Condition: 条件
+ToLock: 未锁定，点击锁定
+Locked: 已锁定，点击解锁
+Protect: 如果锁定，该物品不会被作为合成材料消耗

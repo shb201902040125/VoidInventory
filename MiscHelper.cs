@@ -13,6 +13,7 @@ global using Terraria.UI.Chat;
 global using VoidInventory.UISupport.UIElements;
 global using static VoidInventory.MiscHelper;
 using Terraria.Localization;
+using VoidInventory.Content;
 
 namespace VoidInventory
 {
@@ -193,28 +194,6 @@ namespace VoidInventory
             Vector2 unit = end - start;
             spriteBatch.Draw(texture, start + unit / 2 - Main.screenPosition, new Rectangle(0, 0, 1, 1), color, unit.ToRotation() + MathHelper.PiOver2, new Vector2(0.5f, 0.5f), new Vector2(wide, unit.Length()), SpriteEffects.None, 0f);
         }
-        public static bool CurrencyType(int currencyID, out int itemType)
-        {
-            itemType = -1;
-            if (currencyID == -1) return false;
-            if (CustomCurrencyManager.TryGetCurrencySystem(currencyID, out CustomCurrencySystem system))
-            {
-                var coinDict = system.GetType().GetField("_valuePerUnit", BindingFlags.Instance | BindingFlags.NonPublic);
-                if (coinDict != null)
-                {
-                    foreach ((int coinType, int value) in coinDict.GetValue(system) as Dictionary<int, int>)
-                    {
-                        if (value == 1)
-                        {
-                            itemType = coinType;
-                            return true;
-                        }
-                    }
-
-                }
-            }
-            return false;
-        }
         /// <summary>
         /// 获取相对于给定大小的自动缩放修正
         /// </summary>
@@ -225,33 +204,6 @@ namespace VoidInventory
             float ZoomY = drawRec.Size().Y / (size * scale);
             return 1f / Math.Max(MathF.Sqrt(ZoomX * ZoomX + ZoomY * ZoomY), 1);
         }
-        public static IEnumerable<(int itemId, int count)> ToCoins(int money)
-        {
-            int copper = money % 100;
-            money /= 100;
-            int silver = money % 100;
-            money /= 100;
-            int gold = money % 100;
-            money /= 100;
-            int plat = money;
-
-            yield return (ItemID.PlatinumCoin, plat);
-            yield return (ItemID.GoldCoin, gold);
-            yield return (ItemID.SilverCoin, silver);
-            yield return (ItemID.CopperCoin, copper);
-        }
-        public static bool TryGetNPCShop(int npcType, out AbstractNPCShop shop)
-        {
-            shop = null;
-            foreach (AbstractNPCShop nshop in NPCShopDatabase.AllShops)
-            {
-                if (nshop.NpcType == npcType)
-                {
-                    shop = nshop;
-                    return true;
-                }
-            }
-            return false;
-        }
+        public static UIGroupItem UGI(this UIItemSlot slot) => slot.ContainedItem?.GetGlobalItem<UIGroupItem>();
     }
 }

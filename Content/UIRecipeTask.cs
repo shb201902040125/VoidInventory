@@ -14,6 +14,7 @@ namespace VoidInventory.Content
         public bool enable;
         private static readonly Color G = new(0, 230, 100, 255);
         private static readonly Color R = new(255, 200, 50, 255);
+        private Dictionary<int, bool[]> exclude;
         public int Lave
         {
             get { return time[0]; }
@@ -204,6 +205,8 @@ namespace VoidInventory.Content
                         x = 20;
                         if (groups.Any())
                         {
+                            exclude = new();
+
                             UIText recipeGroup = new(GTV("Group"), drawStyle: 0);
                             recipeGroup.SetSize(recipeGroup.TextSize);
                             recipeGroup.SetPos(x, y);
@@ -217,7 +220,10 @@ namespace VoidInventory.Content
 
                             foreach (var (groupID, stack) in groups)
                             {
+
                                 RecipeGroup group = RecipeGroup.recipeGroups[groupID];
+                                exclude.Add(groupID, new bool[group.ValidItems.Count]);
+
                                 recipeGroup = new(group.GetText.Invoke() + $" x{stack}", drawStyle: 0);
                                 recipeGroup.SetSize(recipeGroup.TextSize);
                                 recipeGroup.SetPos(x, y);
@@ -227,12 +233,32 @@ namespace VoidInventory.Content
                                 line = new(TextureAssets.MagicPixel.Value, recipeGroup.Width, 2);
                                 line.SetPos(x, y - 7);
                                 ui.detail.AddElement(line);
+                                int gid = groupID;
                                 count = 1;
                                 foreach (int ValidItem in group.ValidItems)
                                 {
                                     UIItemSlot groupItem = new(new(ValidItem));
+                                    groupItem.UGI().isGroupItem = true;
                                     groupItem.SetPos(x, y);
                                     groupItem.IgnoreOne = true;
+                                    int i = count;
+                                    groupItem.Events.OnLeftClick += uie =>
+                                    {
+                                        ref bool protect = ref exclude[gid][i - 1];
+                                        protect = !protect;
+                                        groupItem.UGI().protect = protect;
+                                        groupItem.SlotBackTexture = (protect ? TextureAssets.InventoryBack10
+                                        : TextureAssets.InventoryBack).Value;
+                                    };
+                                    groupItem.Events.OnRightClick += uie =>
+                                    {
+                                        ref bool protect = ref exclude[gid][i - 1];
+                                        protect = !protect;
+                                        protect = !protect;
+                                        groupItem.UGI().protect = protect;
+                                        groupItem.SlotBackTexture = (protect ? TextureAssets.InventoryBack10
+                                        : TextureAssets.InventoryBack).Value;
+                                    };
                                     groupItem.Events.OnUpdate += uie =>
                                     {
                                         groupItem.ContainedItem.stack = stack;
@@ -280,6 +306,11 @@ namespace VoidInventory.Content
                                 UIText requireTile = new(mapObjectName, drawStyle: 0);
                                 requireTile.SetSize(requireTile.TextSize);
                                 requireTile.SetPos(x, y);
+                                int tileID = tile;
+                                requireTile.Events.OnUpdate += uie =>
+                                {
+                                    requireTile.color = Main.LocalPlayer.adjTile[tileID] ? G : R;
+                                };
                                 ui.detail.AddElement(requireTile);
                                 y += requireTile.Height;
                             }
@@ -305,6 +336,11 @@ namespace VoidInventory.Content
                                 UIText condition = new(c.Description.Value, drawStyle: 0);
                                 condition.SetSize(condition.TextSize);
                                 condition.SetPos(x, y);
+                                Condition cd = c;
+                                condition.Events.OnUpdate += uie =>
+                                {
+                                    condition.color = c.IsMet() ? G : R;
+                                };
                                 ui.detail.AddElement(condition);
                             }
                         }

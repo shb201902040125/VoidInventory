@@ -10,3 +10,6 @@ Detail: Detail
 Group: RecipeGroup
 Tile: Require Tiles
 Condition: Condition
+ToLock: Unprotected, click to lock
+Locked: Protected, lick to unlock
+Protect: If locked, this item will not be consumed as a material

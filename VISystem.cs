@@ -19,20 +19,6 @@ namespace VoidInventory
                 VoidInventory.Ins.uis.Calculation();
                 VoidInventory.Ins.uis.OnResolutionChange();
             };
-            /*if (ModLoader.TryGetMod("XXX", out Mod mod))
-            {
-                if (mod.TryFind("X", out GlobalItem item))
-                {
-                    Item i = new(77);
-                    if (i.TryGetGlobalItem(item, out GlobalItem result))
-                    {
-
-                    }
-
-                }
-
-            }*/
-
         }
         public override void UpdateUI(GameTime gt)
         {
@@ -46,10 +32,14 @@ namespace VoidInventory
             if (Keybind.JustPressed)
             {
                 VIUI ui = VoidInventory.Ins.uis.Elements[VIUI.NameKey] as VIUI;
-                ui.OnInitialization();
-                ui.ChangeItem(ItemID.RottenChunk);
+                if (!ui.firstLoad)
+                {
+                    ui.OnInitialization();
+                    ui.firstLoad = true;
+                }
+                //ui.ChangeItem(ItemID.RottenChunk);
                 ref bool visible = ref ui.Info.IsVisible;
-                visible = true;
+                visible = !visible;
             }
         }
         public override void PreSaveAndQuit()
