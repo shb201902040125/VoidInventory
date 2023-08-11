@@ -210,6 +210,8 @@
         /// </summary>
         public class ElementEvents
         {
+            public Action<BaseUIElement> OnUpdate;
+
             /// <summary>
             /// 被鼠标点击的委托
             /// </summary>
@@ -400,7 +402,15 @@
         /// <param name="gt"></param>
         public virtual void Update(GameTime gt)
         {
-            ChildrenElements.ForEach(child => { if (child != null && child.IsVisible) { child.Update(gt); } });
+            ChildrenElements.ForEach(child =>
+            {
+                if (child != null && child.IsVisible) 
+                {
+                    child.Update(gt);
+                    child.Events.OnUpdate?.Invoke(child);
+                } 
+            });
+            Events.OnUpdate?.Invoke(this);
         }
 
         /// <summary>

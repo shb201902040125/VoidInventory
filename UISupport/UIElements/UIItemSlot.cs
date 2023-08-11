@@ -1,6 +1,4 @@
-﻿using ReLogic.Graphics;
-
-namespace VoidInventory.UISupport.UIElements
+﻿namespace VoidInventory.UISupport.UIElements
 {
     public delegate bool CheckPutSlotCondition(Item mouseItem);
     public delegate void ExchangeItemHandler(BaseUIElement target);
@@ -22,6 +20,7 @@ namespace VoidInventory.UISupport.UIElements
         /// 物品无限拿取
         /// </summary>
         public bool Infinity;
+        public bool IgnoreOne;
         /// <summary>
         /// 框内物品
         /// </summary>
@@ -34,6 +33,7 @@ namespace VoidInventory.UISupport.UIElements
         /// 绘制颜色
         /// </summary>
         public Color DrawColor { get; set; }
+        public Color StackColor { get; set; }
         /// <summary>
         /// 介绍
         /// </summary>
@@ -69,7 +69,7 @@ namespace VoidInventory.UISupport.UIElements
                 Main.instance.LoadItem(item.type);
             }
             SlotBackTexture = texture == default ? TextureAssets.InventoryBack.Value : texture;
-            DrawColor = Color.White;
+            StackColor = DrawColor = Color.White;
             CornerSize = new Vector2(10, 10);
             Tooltip = "";
             SetSize(52, 52);
@@ -210,9 +210,9 @@ namespace VoidInventory.UISupport.UIElements
                     new Vector2(frame.Width, frame.Height) / 2f, 1 * frame.AutoScale(), 0, 0);
 
                 //绘制物品左下角那个代表数量的数字
-                if (ContainedItem.stack > 1)
+                if (ContainedItem.stack > 1 || IgnoreOne)
                 {
-                    sb.DrawString(font, ContainedItem.stack.ToString(), new Vector2(DrawRectangle.X + 10, DrawRectangle.Y + DrawRectangle.Height - 20), Color.White * Opacity, 0f, Vector2.Zero, 0.8f, SpriteEffects.None, 0f);
+                    sb.DrawString(font, ContainedItem.stack.ToString(), new Vector2(DrawRectangle.X + 10, DrawRectangle.Y + DrawRectangle.Height - 20), StackColor * Opacity, 0f, Vector2.Zero, 0.8f, SpriteEffects.None, 0f);
                 }
             }
         }

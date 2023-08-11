@@ -8,18 +8,21 @@ namespace VoidInventory.UISupport.UIElements
         private UIImage inner;
         private float mouseX;
         private float wheelValue;
+        public int? WheelPixel;
         private int whell = 0;
         private bool isMouseDown = false;
         private float alpha = 0f;
         private float waitToWheelValue = 0f;
         private bool hide;
         public bool UseScrollWheel = false;
+        public UIContainerPanel View { get; set; }
+        public float ViewMovableX => View.MovableSize.X;
         public float WheelValue
         {
             get { return wheelValue; }
             set { waitToWheelValue = Math.Clamp(value, 0, 1); }
         }
-        public HorizontalScrollbar(float wheelValue = 0f, bool hide = false)
+        public HorizontalScrollbar(int? wheelPixel = 52, float wheelValue = 0f, bool hide = false)
         {
             Info.Height.Set(20f, 0f);
             Info.Top.Set(-20f, 1f);
@@ -29,6 +32,7 @@ namespace VoidInventory.UISupport.UIElements
             Info.RightMargin.Pixel = 5f;
             Info.IsSensitive = true;
             Tex = T2D("ShopLookup/UISupport/Asset/VerticalScrollbarInner");
+            WheelPixel = wheelPixel;
             WheelValue = wheelValue;
             Info.IsHidden = hide;
             this.hide = hide;
@@ -86,7 +90,11 @@ namespace VoidInventory.UISupport.UIElements
 
             if (UseScrollWheel && isMouseHover && whell != state.ScrollWheelValue)
             {
-                WheelValue -= (state.ScrollWheelValue - whell) / 10f / width * 2;
+                if (WheelPixel.HasValue)
+                {
+                    WheelValue -= WheelPixel.Value / ViewMovableX * Math.Sign(state.ScrollWheelValue - whell);
+                }
+                else WheelValue -= (state.ScrollWheelValue - whell) / 10f / width * 2;
                 whell = state.ScrollWheelValue;
             }
             if (isMouseDown && mouseX != Main.mouseX)

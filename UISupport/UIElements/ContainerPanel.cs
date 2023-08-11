@@ -24,6 +24,15 @@ namespace VoidInventory.UISupport.UIElements
         private float horizontalWhellValue;
         private Vector2 innerPanelMinLocation;
         private Vector2 innerPanelMaxLocation;
+        public Vector2 MovableSize
+        {
+            get
+            {
+                float maxX = Math.Max(innerPanelMinLocation.X, innerPanelMaxLocation.X - _innerPanel.Info.TotalSize.X);
+                float maxY = Math.Max(innerPanelMinLocation.Y, innerPanelMaxLocation.Y - _innerPanel.Info.TotalSize.Y);
+                return new(maxX, maxY);
+            }
+        }
         public UIContainerPanel()
         {
             Info.HiddenOverflow = true;
@@ -36,8 +45,18 @@ namespace VoidInventory.UISupport.UIElements
                 Register(_innerPanel);
             }
         }
-        public void SetVerticalScrollbar(VerticalScrollbar scrollbar) => _verticalScrollbar = scrollbar;
-        public void SetHorizontalScrollbar(HorizontalScrollbar scrollbar) => _horizontalScrollbar = scrollbar;
+        public void SetVerticalScrollbar(VerticalScrollbar scrollbar)
+        {
+            _verticalScrollbar = scrollbar;
+            scrollbar.View = this;
+        }
+
+        public void SetHorizontalScrollbar(HorizontalScrollbar scrollbar)
+        {
+            _horizontalScrollbar = scrollbar;
+            scrollbar.View = this;
+        }
+
         public override void OnInitialization()
         {
             base.OnInitialization();
@@ -53,29 +72,28 @@ namespace VoidInventory.UISupport.UIElements
             base.Update(gt);
             if (HitBox().Contains(Main.MouseScreen.ToPoint()) && _verticalScrollbar != null | _horizontalScrollbar != null)
             {
-                PlayerInput.LockVanillaMouseScroll("ShopLookupScroll");
+                PlayerInput.LockVanillaMouseScroll("VIScroll");
             }
             if (_verticalScrollbar != null && verticalWhellValue != _verticalScrollbar.WheelValue)
             {
                 verticalWhellValue = _verticalScrollbar.WheelValue;
-                float maxY = innerPanelMaxLocation.Y - _innerPanel.Info.TotalSize.Y;
+                float maxY = MovableSize.Y;/* innerPanelMaxLocation.Y - _innerPanel.Info.TotalSize.Y;
                 if (maxY < innerPanelMinLocation.Y)
                 {
                     maxY = innerPanelMinLocation.Y;
-                }
+                }*/
 
                 _innerPanel.Info.Top.Pixel = -MathHelper.Lerp(innerPanelMinLocation.Y, maxY, verticalWhellValue);
                 Calculation();
             }
-
             if (_horizontalScrollbar != null && horizontalWhellValue != _horizontalScrollbar.WheelValue)
             {
                 horizontalWhellValue = _horizontalScrollbar.WheelValue;
-                float maxX = innerPanelMaxLocation.X - _innerPanel.Info.TotalSize.X;
+                float maxX = MovableSize.X;/*innerPanelMaxLocation.X - _innerPanel.Info.TotalSize.X;
                 if (maxX < innerPanelMinLocation.X)
                 {
                     maxX = innerPanelMinLocation.X;
-                }
+                }*/
 
                 _innerPanel.Info.Left.Pixel = -MathHelper.Lerp(innerPanelMinLocation.X, maxX, horizontalWhellValue);
                 Calculation();

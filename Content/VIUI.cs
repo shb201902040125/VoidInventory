@@ -7,14 +7,15 @@ namespace VoidInventory.Content
     {
         public const string NameKey = "VoidInventory.Content.VIUI";
         public bool firstLoad;
-        public UIPanel bg;
+        public UIPanel bg, dbg;
         public UIBottom left, right;
         public UIContainerPanel leftView, rightView;
         public UIItemSlot focusItem;
         public UIInputBox input;
         internal static Recipe MouseRecipe;
         public int TaskCount => leftView.InnerUIE.Count;
-        public UIPanel detail;
+        public UIContainerPanel detail;
+        public int detailID;
         public override void OnInitialization()
         {
             base.OnInitialization();
@@ -59,7 +60,7 @@ namespace VoidInventory.Content
             leftView.Info.SetMargin(0);
             left.Register(leftView);
 
-            VerticalScrollbar leftscroll = new();
+            VerticalScrollbar leftscroll = new(62);
             leftscroll.Info.IsHidden = true;
             leftscroll.Info.Left.Pixel += 10;
             leftView.SetVerticalScrollbar(leftscroll);
@@ -74,17 +75,27 @@ namespace VoidInventory.Content
             rightView.Info.SetMargin(0);
             right.Register(rightView);
 
-            VerticalScrollbar rightscroll = new();
+            VerticalScrollbar rightscroll = new(62);
             rightscroll.Info.IsHidden = true;
             rightscroll.Info.Left.Pixel += 10;
             rightView.SetVerticalScrollbar(rightscroll);
             right.Register(rightscroll);
 
-            detail = new(default, 300, 500);
-            detail.SetPos(0, 0, 0.1f, 0.35f);
-            detail.Info.IsVisible = false;
-            detail.CanDrag = true;
-            Register(detail);
+            dbg = new(default, 320, 500);
+            dbg.SetPos(0, 0, 0.1f, 0.35f);
+            dbg.Info.IsVisible = false;
+            dbg.CanDrag = true;
+            Register(dbg);
+
+            detail = new();
+            detail.Info.SetMargin(0);
+            detail.SetSize(-10, -40, 1, 1);
+            detail.SetPos(0, 20);
+            dbg.Register(detail);
+
+            VerticalScrollbar detailscroll = new(hide: true);
+            detail.SetVerticalScrollbar(detailscroll);
+            dbg.Register(detailscroll);
         }
         public override void Update(GameTime gt)
         {

@@ -19,6 +19,20 @@ namespace VoidInventory
                 VoidInventory.Ins.uis.Calculation();
                 VoidInventory.Ins.uis.OnResolutionChange();
             };
+            /*if (ModLoader.TryGetMod("XXX", out Mod mod))
+            {
+                if (mod.TryFind("X", out GlobalItem item))
+                {
+                    Item i = new(77);
+                    if (i.TryGetGlobalItem(item, out GlobalItem result))
+                    {
+
+                    }
+
+                }
+
+            }*/
+
         }
         public override void UpdateUI(GameTime gt)
         {

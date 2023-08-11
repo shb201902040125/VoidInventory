@@ -1,4 +1,5 @@
-﻿using Terraria.Localization;
+﻿using System.Linq;
+using Terraria.Localization;
 using Terraria.Map;
 
 namespace VoidInventory.Content
@@ -99,125 +100,217 @@ namespace VoidInventory.Content
             detail.Events.OnLeftClick += evt =>
             {
                 VIUI ui = VoidInventory.Ins.uis.Elements[VIUI.NameKey] as VIUI;
-                ui.detail.Info.IsVisible = !ui.detail.Info.IsVisible;
-                ui.detail.RemoveAll();
+                ref bool visiable = ref ui.dbg.Info.IsVisible;
 
-                if (ui.detail.Info.IsVisible)
+                if (!visiable)
                 {
+                    visiable = true;
+                }
+                else
+                {
+                    if (ui.detailID != id)
+                    {
+                        visiable = true;
+                        ui.detailID = id;
+                    }
+                    else
+                    {
+                        visiable = false;
+                    }
+                }
 
-                    int x = 20, y = 20;
+                if (visiable)
+                {
+                    ui.detail.ClearAllElements();
+
+                    int x = 20, y = 0;
 
                     UIItemSlot item = new(recipe.createItem);
                     item.SetPos(x, y);
-                    ui.detail.Register(item);
-
-                    y += item.Height + 20;
-
-                    UIText material = new(Language.GetTextValue("LegacyTooltip.36"), drawStyle: 0);
-                    material.SetSize(material.TextSize);
-                    material.SetPos(x, y);
-                    ui.detail.Register(material);
-
-                    y += material.Height;
-
-                    List<(int groupID, int stack)> groups = new();
-                    foreach (Item requiredItem in recipe.requiredItem)
+                    ui.detail.AddElement(item);
+                    UIImage line;
+                    if (recipe.requiredItem.Any())
                     {
-                        bool isGroupItem = false;
-                        foreach (int acceptedGroups in recipe.acceptedGroups)
+
+                        y += item.Height + 20;
+
+                        UIText material = new(Language.GetTextValue("LegacyTooltip.36"), drawStyle: 0);
+                        material.SetSize(material.TextSize);
+                        material.SetPos(x, y);
+                        ui.detail.AddElement(material);
+
+                        y += material.Height;
+
+                        line = new(TextureAssets.MagicPixel.Value, -40, 2, 1);
+                        line.SetPos(x, y - 7);
+                        ui.detail.AddElement(line);
+
+                        List<(int groupID, int stack)> groups = new();
+                        int count = 1, len = recipe.requiredItem.Count;
+                        foreach (Item requiredItem in recipe.requiredItem)
                         {
-                            bool cotains = false;
-                            RecipeGroup group = RecipeGroup.recipeGroups[acceptedGroups];
-                            foreach (int ValidItem in group.ValidItems)
+                            bool isGroupItem = false;
+                            foreach (int acceptedGroups in recipe.acceptedGroups)
                             {
-                                if (requiredItem.type == ValidItem)
+                                bool cotains = false;
+                                RecipeGroup group = RecipeGroup.recipeGroups[acceptedGroups];
+                                foreach (int ValidItem in group.ValidItems)
                                 {
-                                    cotains = true;
-                                    groups.Add((acceptedGroups, requiredItem.stack));
+                                    if (requiredItem.type == ValidItem)
+                                    {
+                                        cotains = true;
+                                        groups.Add((acceptedGroups, requiredItem.stack));
+                                        len--;
+                                        break;
+                                    }
+                                }
+                                if (cotains)
+                                {
+                                    isGroupItem = true;
                                     break;
                                 }
                             }
-                            if (cotains)
+                            if (isGroupItem)
                             {
-                                isGroupItem = true;
-                                break;
+                                continue;
+                            }
+                            UIItemSlot ingredient = new(requiredItem);
+                            ingredient.SetPos(x, y);
+                            ingredient.IgnoreOne = true;
+                            ingredient.ReDraw += sb =>
+                            {
+                                ingredient.DrawSelf(sb);
+                                var font = FontAssets.MouseText.Value;
+                                int amount = 3;//player.itemCount
+                                string text = amount.ToString();
+                                Vector2 origin = font.MeasureString(text) / 2f;
+                                ChatManager.DrawColorCodedStringWithShadow(sb, font, text, ingredient.Pos()
+                                    + new Vector2(26, 52 + 12), amount >= requiredItem.stack ? G : R,
+                                    0, origin, new Vector2(0.8f), -1, 1.5f);
+                            };
+                            ui.detail.AddElement(ingredient);
+                            if (count < len)
+                            {
+                                x += 52 + 4;
+                                if (x + 52 > ui.detail.Width)
+                                {
+                                    x = 20;
+                                    y += 52 + 4 + 28;
+                                }
+                            }
+                            else y += 52 + 4 + 28;
+                            count++;
+                        }
+                        x = 20;
+                        if (groups.Any())
+                        {
+                            UIText recipeGroup = new(GTV("Group"), drawStyle: 0);
+                            recipeGroup.SetSize(recipeGroup.TextSize);
+                            recipeGroup.SetPos(x, y);
+                            ui.detail.AddElement(recipeGroup);
+
+                            y += recipeGroup.Height + 10;
+
+                            line = new(TextureAssets.MagicPixel.Value, -40, 2, 1);
+                            line.SetPos(x, y - 17);
+                            ui.detail.AddElement(line);
+
+                            foreach (var (groupID, stack) in groups)
+                            {
+                                RecipeGroup group = RecipeGroup.recipeGroups[groupID];
+                                recipeGroup = new(group.GetText.Invoke() + $" x{stack}", drawStyle: 0);
+                                recipeGroup.SetSize(recipeGroup.TextSize);
+                                recipeGroup.SetPos(x, y);
+                                y += recipeGroup.Height;
+                                ui.detail.AddElement(recipeGroup);
+
+                                line = new(TextureAssets.MagicPixel.Value, recipeGroup.Width, 2);
+                                line.SetPos(x, y - 7);
+                                ui.detail.AddElement(line);
+                                count = 1;
+                                foreach (int ValidItem in group.ValidItems)
+                                {
+                                    UIItemSlot groupItem = new(new(ValidItem));
+                                    groupItem.SetPos(x, y);
+                                    groupItem.IgnoreOne = true;
+                                    groupItem.Events.OnUpdate += uie =>
+                                    {
+                                        groupItem.ContainedItem.stack = stack;
+                                        groupItem.StackColor = groupItem.ContainedItem.stack >= stack ? G : R;
+                                    };
+                                    ui.detail.AddElement(groupItem);
+                                    if (count < group.ValidItems.Count)
+                                    {
+                                        x += 56;
+                                        if (x + 52 > ui.detail.Width)
+                                        {
+                                            x = 20;
+                                            y += 52 + 4;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        x = 20;
+                                        y += 52 + 20;
+                                    }
+                                    count++;
+                                }
                             }
                         }
-                        if (isGroupItem)
-                        {
-                            continue;
-                        }
-                        UIItemSlot ingredient = new(requiredItem);
-                        ingredient.SetPos(x, y);
-                        ui.detail.Register(ingredient);
-                        x += 52 + 4;
-                        if (x + 52 > ui.detail.Width)
+
+                        if (recipe.requiredTile.Any())
                         {
                             x = 20;
-                            y += 4;
-                        }
-                    }
-                    x = 20;
-                    y += 52 + 16;
-                    foreach (var (groupID, stack) in groups)
-                    {
-                        RecipeGroup group = Terraria.RecipeGroup.recipeGroups[groupID];
-                        UIText RecipeGroup = new(GTV("Group") + " " + group.GetText.Invoke(), drawStyle: 0);
-                        RecipeGroup.SetSize(RecipeGroup.TextSize);
-                        RecipeGroup.SetPos(x, y);
-                        y += RecipeGroup.Height;
-                        ui.detail.Register(RecipeGroup);
-                        foreach (int ValidItem in group.ValidItems)
-                        {
-                            UIItemSlot groupItem = new(new(ValidItem, stack));
-                            groupItem.SetPos(x, y);
-                            ui.detail.Register(groupItem);
-                            x += 56;
-                            if (x + 52 > ui.detail.Width)
+
+                            UIText tiles = new(GTV("Tile"), drawStyle: 0);
+                            tiles.SetSize(tiles.TextSize);
+                            tiles.SetPos(x, y);
+                            ui.detail.AddElement(tiles);
+
+                            y += tiles.Height;
+
+                            line = new(TextureAssets.MagicPixel.Value, -40, 2, 1);
+                            line.SetPos(x, y - 7);
+                            ui.detail.AddElement(line);
+
+                            foreach (int tile in recipe.requiredTile)
                             {
-                                x = 20;
-                                y += 4;
+                                int requiredTileStyle = Recipe.GetRequiredTileStyle(tile);
+                                string mapObjectName = Lang.GetMapObjectName(MapHelper.TileToLookup(tile, requiredTileStyle));
+                                UIText requireTile = new(mapObjectName, drawStyle: 0);
+                                requireTile.SetSize(requireTile.TextSize);
+                                requireTile.SetPos(x, y);
+                                ui.detail.AddElement(requireTile);
+                                y += requireTile.Height;
+                            }
+                        }
+
+                        if (recipe.Conditions.Any())
+                        {
+                            y += 10;
+
+                            UIText cds = new(GTV("Condition"), drawStyle: 0);
+                            cds.SetSize(cds.TextSize);
+                            cds.SetPos(x, y);
+                            ui.detail.AddElement(cds);
+
+                            y += cds.Height;
+
+                            line = new(TextureAssets.MagicPixel.Value, -40, 2, 1);
+                            line.SetPos(x, y - 7);
+                            ui.detail.AddElement(line);
+
+                            foreach (Condition c in recipe.Conditions)
+                            {
+                                UIText condition = new(c.Description.Value, drawStyle: 0);
+                                condition.SetSize(condition.TextSize);
+                                condition.SetPos(x, y);
+                                ui.detail.AddElement(condition);
                             }
                         }
                     }
-                    x = 20;
-                    y += 52 + 16;
-
-                    UIText tiles = new(GTV("Tile"), drawStyle: 0);
-                    tiles.SetSize(tiles.TextSize);
-                    tiles.SetPos(x, y);
-                    ui.detail.Register(tiles);
-
-                    y += tiles.Height;
-
-                    foreach (int tile in recipe.requiredTile)
-                    {
-                        int requiredTileStyle = Recipe.GetRequiredTileStyle(tile);
-                        string mapObjectName = Lang.GetMapObjectName(MapHelper.TileToLookup(tile, requiredTileStyle));
-                        UIText requireTile = new(mapObjectName, drawStyle: 0);
-                        requireTile.SetSize(tiles.TextSize);
-                        requireTile.SetPos(x, y);
-                        ui.detail.Register(requireTile);
-                        y += requireTile.Height;
-                    }
-
-                    y += 10;
-
-                    UIText cds = new(GTV("Condition"), drawStyle: 0);
-                    cds.SetSize(cds.TextSize);
-                    cds.SetPos(x, y);
-                    ui.detail.Register(cds);
-
-                    y += cds.Height;
-
-                    foreach (Condition c in recipe.Conditions)
-                    {
-                        UIText condition = new(c.Description.Value, drawStyle: 0);
-                        condition.SetSize(condition.TextSize);
-                        tiles.SetPos(x, y);
-                        ui.detail.Register(condition);
-                    }
                 }
+                ui.dbg.Calculation();
             };
             detail.Events.OnMouseOver += evt => detail.color = R;
             detail.Events.OnMouseOut += evt => detail.color = Color.White;
