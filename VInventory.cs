@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
 using Terraria.ModLoader.IO;
+using VoidInventory.Content;
 
 namespace VoidInventory
 {
@@ -59,7 +60,7 @@ namespace VoidInventory
                 mergaQueue.Enqueue(toInner);
             }
         }
-        void Merga_Inner(Item item, bool ignoreRecipe = false)
+        public void Merga_Inner(Item item, bool ignoreRecipe = false)
         {
             //将物品拆分(防止超出堆叠)
             List<Item> willPuts = SplitItems(item);
@@ -109,6 +110,13 @@ namespace VoidInventory
             {
                 //未有该种物品，直接将拆分结果设为储存
                 items[item.type] = willPuts;
+                VIUI ui = VoidInventory.Ins.uis.Elements[VIUI.NameKey] as VIUI;
+                UIItemTex slot = new(item.type);
+                var uiItems = VIUI.items;
+                int count = uiItems.Count;
+                slot.SetPos(count % 6 * 56 + 10, count / 6 * 56 + 10);
+                uiItems.Add(slot);
+                ui.leftView.AddElement(slot);
             }
             //检查合并任务队列是否清空
             if (mergaQueue.TryDequeue(out Item nextItem))
@@ -195,7 +203,7 @@ namespace VoidInventory
         void MapTileAsAdj()
         {
             tileMap.Clear();
-            foreach(var pair in items.Values)
+            foreach (var pair in items.Values)
             {
                 tileMap.Add(pair[0].createTile, pair.Sum(i => i.stack));
             }

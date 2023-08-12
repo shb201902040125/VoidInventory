@@ -1,52 +1,27 @@
-﻿using System.Linq;
-using static VoidInventory.RecipeSupport;
-
-namespace VoidInventory.Content
+﻿namespace VoidInventory.Content
 {
     public class VIUI : ContainerElement
     {
         public const string NameKey = "VoidInventory.Content.VIUI";
-        public bool firstLoad;
         public UIPanel bg, dbg;
         public UIBottom left, right;
         public UIContainerPanel leftView, rightView;
-        public UIItemSlot focusItem;
         public UIInputBox input;
-        internal static Recipe MouseRecipe;
-        public int TaskCount => leftView.InnerUIE.Count;
-        public UIContainerPanel detail;
-        public int detailID;
+        internal static List<UIItemTex> items=new();
         public override void OnInitialization()
         {
             base.OnInitialization();
-            if (Main.gameMenu) return;
             RemoveAll();
             bg = new(default, 800, 600);
             bg.SetCenter(0, 0, 0.5f, 0.5f);
             bg.CanDrag = true;
             Register(bg);
 
-            focusItem = new();
-            focusItem.SetPos(20, 20);
-            focusItem.Events.OnLeftDown += evt =>
-            {
-                if (Main.mouseItem.type > ItemID.None)
-                {
-                    ChangeItem(Main.mouseItem.type);
-                }
-            };
-            focusItem.Events.OnRightClick += evt =>
-            {
-                ChangeItem(0);
-            };
-            bg.Register(focusItem);
-
             input = new(color: Color.White);
             input.SetSize(160, 36);
             input.SetPos(-input.Width - 20, 20 + 10, 1);
             input.OnInputText += () =>
             {
-                FindRecipe();
             };
             input.DrawRec[0] = Color.Red;
             bg.Register(input);
@@ -58,6 +33,13 @@ namespace VoidInventory.Content
 
             leftView = new();
             leftView.Info.SetMargin(0);
+            leftView.Events.OnLeftClick += evt =>
+            {
+                if (Main.mouseItem.type > ItemID.None)
+                {
+                    Main.LocalPlayer.VIP().vInventory.Merga(ref Main.mouseItem);
+                }
+            };
             left.Register(leftView);
 
             VerticalScrollbar leftscroll = new(62);
@@ -86,91 +68,6 @@ namespace VoidInventory.Content
             dbg.Info.IsVisible = false;
             dbg.CanDrag = true;
             Register(dbg);
-
-            detail = new();
-            detail.Info.SetMargin(0);
-            detail.SetSize(-10, -40, 1, 1);
-            detail.SetPos(0, 20);
-            dbg.Register(detail);
-
-            VerticalScrollbar detailscroll = new(hide: true);
-            detail.SetVerticalScrollbar(detailscroll);
-            dbg.Register(detailscroll);
-        }
-        public override void Update(GameTime gt)
-        {
-            base.Update(gt);
-        }
-        public void ChangeItem(int itemType)
-        {
-            focusItem.ContainedItem = new(itemType);
-            FindRecipe();
-        }
-        private void FindRecipe()
-        {
-            rightView.ClearAllElements();
-            int type = focusItem.ContainedItem.type;
-            bool have = TryFindRecipes(x => x.createItem.type == type || x.ContainsIngredient(type), out var recipes);
-            string text = input.Text;
-            if (text.Length > 0)
-            {
-                if (type == 0) TryFindRecipes(x => x.createItem.Name.Contains(text), out recipes);
-                else recipes = recipes.Where(x => x.createItem.Name.Contains(text));
-            }
-            if (!have || !recipes.Any()) return;
-            int x = 10, y = 10;
-            foreach (Recipe r in recipes)
-            {
-                if (r.createItem.type == ItemID.None) continue;
-                UIRecipeItem recipe = new(r);
-                recipe.SetPos(x, y);
-                recipe.Info.IsSensitive = true;
-                recipe.Events.OnLeftDown += evt =>
-                {
-                    MouseRecipe = recipe.RecipeTarget;
-                };
-                recipe.Events.OnLeftUp += evt =>
-                {
-                    if (leftView.ContainsPoint(Main.MouseScreen))
-                    {
-                        AddRecipeTask(MouseRecipe);
-                    }
-                    MouseRecipe = null;
-                };
-                recipe.Events.OnLeftDoubleClick += evt =>
-                {
-
-                };
-                rightView.AddElement(recipe);
-                x += 56;
-                if (x + 56 > rightView.Width)
-                {
-                    x = 10;
-                    y += 56;
-                }
-            }
-        }
-        private void AddRecipeTask(Recipe recipe)
-        {
-            UIRecipeTask task = new(recipe)
-            {
-                id = TaskCount
-            };
-            task.SetSize(-20, 52, 1);
-            task.SetPos(10, 10 + TaskCount * 62);
-            leftView.AddElement(task);
-        }
-        public void SortRecipeTask(int id)
-        {
-            foreach (UIRecipeTask task in leftView.InnerUIE.Cast<UIRecipeTask>())
-            {
-                if (task.id > id)
-                {
-                    task.id--;
-                    task.Info.Top.Pixel -= 62;
-                }
-            }
-            leftView.Calculation();
         }
     }
 }

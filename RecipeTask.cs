@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-using Terraria;
+﻿using System.Linq;
 using Terraria.ModLoader.IO;
 
 namespace VoidInventory
@@ -243,7 +236,7 @@ namespace VoidInventory
                 list.RemoveAll(i => i.IsAir);
             }
         }
-        private int HowManyCanUse(int type, int howManyNeed, out Dictionary<int, int> useWhat, VInventory inv, Dictionary<int, int> used)
+        public int HowManyCanUse(int type, int howManyNeed, out Dictionary<int, int> useWhat, VInventory inv, Dictionary<int, int> used)
         {
             int number = 0;
             useWhat = new();
@@ -302,6 +295,14 @@ namespace VoidInventory
             }
             return true;
         }
+        public static bool CheckTile(int tileID, Player player, VInventory inv)
+        {
+            if (!player.adjTile[tileID] && !inv.CountTile(1, tileID))
+            {
+                return false;
+            }
+            return true;
+        }
         bool CheckConditions(Player player, VInventory inv)
         {
             if (RecipeTarget.Conditions.Contains(Condition.NearWater) && !(player.adjWater || inv.HasWater))
@@ -338,6 +339,42 @@ namespace VoidInventory
                 {
                     return false;
                 }
+            }
+            return true;
+        }
+        public static bool ChechCondition(Condition c, Player player, VInventory inv)
+        {
+            if (c == Condition.NearWater && !(player.adjWater || inv.HasWater))
+            {
+                return false;
+            }
+            if (c == Condition.NearLava && !(player.adjLava || inv.HasLava))
+            {
+                return false;
+            }
+            if (c == Condition.NearHoney && !(player.adjHoney || inv.HasHoney))
+            {
+                return false;
+            }
+            if (c == Condition.NearShimmer && !(player.adjShimmer || inv.HasShimmer))
+            {
+                return false;
+            }
+            if (c == Condition.InSnow && !(player.ZoneSnow || inv.CountTile(1500, TileID.SnowBlock, TileID.IceBlock)))
+            {
+                return false;
+            }
+            if (c == Condition.InGraveyard && !(player.ZoneGraveyard || inv.CountTile(7, TileID.Tombstones)))
+            {
+                return false;
+            }
+            if (ignores.Contains(c))
+            {
+                return true;
+            }
+            if (!c.IsMet())
+            {
+                return false;
             }
             return true;
         }

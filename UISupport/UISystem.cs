@@ -158,12 +158,12 @@ namespace VoidInventory.UISupport
                 {
                     if (mouseLeftCooldown.IsCoolDown())
                     {
-                        interact.ForEach(x => x.Events.LeftClick(x));
+                        needCallMouseLeftUpElements.ForEach(x => x.Events.LeftClick(x));
                         mouseLeftCooldown.ResetCoolDown();
                     }
                     else
                     {
-                        interact.ForEach(x => x.Events.LeftDoubleClick(x));
+                        needCallMouseLeftUpElements.ForEach(x => x.Events.LeftDoubleClick(x));
                         mouseLeftCooldown.CoolDown();
                     }
                     needCallMouseLeftUpElements.ForEach(x => x.Events.LeftUp(x));
@@ -184,12 +184,12 @@ namespace VoidInventory.UISupport
                 {
                     if (mouseRightCooldown.IsCoolDown())
                     {
-                        interact.ForEach(x => x.Events.RightClick(x));
+                        needCallMouseRightUpElements.ForEach(x => x.Events.RightClick(x));
                         mouseRightCooldown.ResetCoolDown();
                     }
                     else
                     {
-                        interact.ForEach(x => x.Events.RightDoubleClick(x));
+                        needCallMouseRightUpElements.ForEach(x => x.Events.RightDoubleClick(x));
                         mouseRightCooldown.CoolDown();
                     }
                     needCallMouseRightUpElements.ForEach(x => x.Events.RightUp(x));

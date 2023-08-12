@@ -32,11 +32,11 @@ namespace VoidInventory
             if (Keybind.JustPressed)
             {
                 VIUI ui = VoidInventory.Ins.uis.Elements[VIUI.NameKey] as VIUI;
-                if (!ui.firstLoad)
+                /*if (!ui.firstLoad)
                 {
                     ui.OnInitialization();
                     ui.firstLoad = true;
-                }
+                }*/
                 //ui.ChangeItem(ItemID.RottenChunk);
                 ref bool visible = ref ui.Info.IsVisible;
                 visible = !visible;
@@ -44,7 +44,7 @@ namespace VoidInventory
         }
         public override void PreSaveAndQuit()
         {
-            VIUI ui = VoidInventory.Ins.uis.Elements[VIUI.NameKey] as VIUI;
+            RTUI ui = VoidInventory.Ins.uis.Elements[RTUI.NameKey] as RTUI;
             ui.Info.IsVisible = false;
             ui.firstLoad = false;
         }

@@ -8,44 +8,25 @@ namespace VoidInventory.Content
     {
         private static readonly Color G = new(0, 230, 100, 255);
         private static readonly Color R = new(255, 200, 50, 255);
-        private readonly int[] time;
-        private readonly bool[] down;
-        private int timer;
-        private Dictionary<int, bool[]> exclude;
+        /// <summary>
+        /// 仅用于排序
+        /// </summary>
         public int id;
-        public int type;
-        public bool enable;
-        /// <summary>
-        /// 剩余执行次数
-        /// </summary>
-        public int Lave
-        {
-            get { return time[0]; }
-            set { time[0] = value; }
-        }
-        /// <summary>
-        /// 当前拥有数
-        /// </summary>
-        public int Has
-        {
-            get { return time[1]; }
-            set { time[1] = value; }
-        }
-        /// <summary>
-        /// 保持多少数量
-        /// </summary>
-        public int Max
-        {
-            get { return time[2]; }
-            set { time[2] = value; }
-        }
-        public DynamicSpriteFont font;
+        public bool[] down;
+        private int timer;
+        public RecipeTask RT { get; private set; }
+        public readonly static DynamicSpriteFont font = FontAssets.MouseText.Value;
         public UIRecipeTask(Recipe recipe) : base(recipe)
         {
+            Player player = Main.LocalPlayer;
+            VIPlayer vip = player.VIP();
+            VInventory inv = vip.vInventory;
             Item item = recipe.createItem;
-            time = new int[3] { 0, 0, 10 };
-            font = FontAssets.MouseText.Value;
             down = new bool[4];
+
+            RecipeTask recipeTask = new(recipe);
+            inv.recipeTasks.Add(recipeTask);
+            RT = recipeTask;
 
             float x = 57;
 
@@ -82,13 +63,13 @@ namespace VoidInventory.Content
             func.SetPos(x, font.LineSpacing + 3);
             func.Events.OnLeftClick += evt =>
             {
-                enable = !enable;
-                state.color = enable ? G : R;
+                RT.Stopping = !RT.Stopping;
+                state.color = RT.Stopping ? G : R;
             };
             func.Events.OnRightClick += evt =>
             {
-                if (++type > 2) type = 0;
-                func.ChangeText(GTV($"Func.{type}"));
+                if (++RT.TaskState > 2) RT.TaskState = 0;
+                func.ChangeText(GTV($"Func.{RT.TaskState}"));
             };
             func.Events.OnMouseOver += evt => func.color = R;
             func.Events.OnMouseOut += evt => func.color = Color.White;
@@ -99,8 +80,9 @@ namespace VoidInventory.Content
             remove.Events.OnLeftClick += evt =>
             {
                 ParentElement.Remove(this);
-                VIUI ui = VoidInventory.Ins.uis.Elements[VIUI.NameKey] as VIUI;
+                RTUI ui = VoidInventory.Ins.uis.Elements[RTUI.NameKey] as RTUI;
                 ui.SortRecipeTask(id);
+                inv.recipeTasks.Remove(RT);
             };
             Register(remove);
 
@@ -120,29 +102,6 @@ namespace VoidInventory.Content
             else if (down[2]) Change(1, 15);
             else if (down[3]) Change(1, 4);
             else timer = 0;
-            /*if (type > 0) Has =;*/
-            if (enable)
-            {
-                switch (type)
-                {
-                    case 0:
-                        if (Lave > 0)
-                        {
-                            //DoRecipe
-                            Lave--;
-                        };
-                        break;
-                    case 1:
-                        if (Has < Max)
-                        {
-                            //DoRecipe
-                        };
-                        break;
-                    case 2:
-                        //DoRecipe
-                        break;
-                }
-            }
         }
         private int RequireCount(int itemType)
         {
@@ -152,11 +111,12 @@ namespace VoidInventory.Content
         }
         private void Change(int count, int frame)
         {
-            if (type == 2) return;
+            if (RT.TaskState == 2) return;
+            ref int target = ref RT.CountTarget;
             if (timer++ % frame == 0)
             {
-                if (type == 0) Lave = Math.Max(0, Lave + count);
-                else Max = Math.Clamp(Max + count, 0, 9999);
+                if (RT.TaskState == 0) target = Math.Max(0, target + count);
+                else target = Math.Clamp(target + count, 0, 9999);
             }
         }
         public override void DrawSelf(SpriteBatch sb)
@@ -165,18 +125,19 @@ namespace VoidInventory.Content
             sb.Draw(TextureAssets.MagicPixel.Value, rec, Color.White * 0.5f);
             Vector2 pos = rec.TopLeft() + new Vector2(75, 5);
             string text = "";
-            switch (type)
+            int target = RT.CountTarget;
+            switch (RT.TaskState)
             {
-                case 0: text += Lave; break;
-                case 1: text = $"{Has}/{Max}"; break;
-                case 2: text += Has; break;
+                case 0: text += target; break;
+                case 1: text = $"{RequireCount(RT.RecipeTarget.createItem.type)}/{target}"; break;
+                case 2: text += RequireCount(RT.RecipeTarget.createItem.type); break;
             }
             ChatManager.DrawColorCodedStringWithShadow(sb, font, text, pos, Color.White, 0,
                 Vector2.Zero, Vector2.One, -1, 1.5f);
         }
         private void SetDetail(Recipe recipe)
         {
-            VIUI ui = VoidInventory.Ins.uis.Elements[VIUI.NameKey] as VIUI;
+            RTUI ui = VoidInventory.Ins.uis.Elements[RTUI.NameKey] as RTUI;
             ref bool visiable = ref ui.dbg.Info.IsVisible;
 
             if (!visiable)
@@ -281,8 +242,6 @@ namespace VoidInventory.Content
                     x = 20;
                     if (groups.Any())
                     {
-                        exclude = new();
-
                         UIText recipeGroup = new(GTV("Group"), drawStyle: 0);
                         recipeGroup.SetSize(recipeGroup.TextSize);
                         recipeGroup.SetPos(x, y);
@@ -298,7 +257,7 @@ namespace VoidInventory.Content
                         {
 
                             RecipeGroup group = RecipeGroup.recipeGroups[groupID];
-                            exclude.Add(groupID, new bool[group.ValidItems.Count]);
+                            RT.exclude.TryAdd(groupID, new Dictionary<int, bool>());
 
                             recipeGroup = new(group.GetText.Invoke() + $" x{stack}", drawStyle: 0);
                             recipeGroup.SetSize(recipeGroup.TextSize);
@@ -317,18 +276,20 @@ namespace VoidInventory.Content
                                 groupItem.UGI().isGroupItem = true;
                                 groupItem.SetPos(x, y);
                                 groupItem.IgnoreOne = true;
-                                int i = count;
+                                int type = ValidItem;
+                                RT.exclude[gid].TryAdd(ValidItem, false);
                                 groupItem.Events.OnLeftClick += uie =>
                                 {
-                                    ref bool protect = ref exclude[gid][i - 1];
+                                    bool protect = RT.exclude[gid][type];
                                     protect = !protect;
+                                    RT.exclude[gid][type] = protect;
                                     groupItem.UGI().protect = protect;
                                     groupItem.SlotBackTexture = (protect ? TextureAssets.InventoryBack10
                                     : TextureAssets.InventoryBack).Value;
                                 };
                                 groupItem.Events.OnRightClick += uie =>
                                 {
-                                    ref bool protect = ref exclude[gid][i - 1];
+                                    bool protect = RT.exclude[gid][type];
                                     protect = !protect;
                                     protect = !protect;
                                     groupItem.UGI().protect = protect;

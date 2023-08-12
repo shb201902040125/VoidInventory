@@ -205,5 +205,6 @@ namespace VoidInventory
             return 1f / Math.Max(MathF.Sqrt(ZoomX * ZoomX + ZoomY * ZoomY), 1);
         }
         public static UIGroupItem UGI(this UIItemSlot slot) => slot.ContainedItem?.GetGlobalItem<UIGroupItem>();
+        public static VIPlayer VIP(this Player player)=>player.GetModPlayer<VIPlayer>();
     }
 }
