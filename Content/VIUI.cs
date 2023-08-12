@@ -7,7 +7,7 @@
         public UIBottom left, right;
         public UIContainerPanel leftView, rightView;
         public UIInputBox input;
-        internal static List<UIItemTex> items=new();
+        internal static List<UIItemTex> items = new();
         public override void OnInitialization()
         {
             base.OnInitialization();
@@ -25,6 +25,16 @@
             };
             input.DrawRec[0] = Color.Red;
             bg.Register(input);
+
+            UIText RT = new("合成");
+            RT.SetSize(RT.TextSize);
+            RT.SetCenter(0, 30, 0.5f, 0);
+            RT.Events.OnLeftClick += evt =>
+            {
+                Info.IsVisible = false;
+                VoidInventory.Ins.uis.Elements[RTUI.NameKey].Info.IsVisible = true;
+            };
+            bg.Register(RT);
 
             left = new(-40, -102, 0.5f, 1f);
             left.SetPos(20, 82);

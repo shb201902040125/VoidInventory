@@ -31,14 +31,15 @@ namespace VoidInventory
             VoidInventory.Ins.uis.Update(gt);
             if (Keybind.JustPressed)
             {
-                VIUI ui = VoidInventory.Ins.uis.Elements[VIUI.NameKey] as VIUI;
-                /*if (!ui.firstLoad)
+                RTUI ui = VoidInventory.Ins.uis.Elements[RTUI.NameKey] as RTUI;
+                if (!ui.firstLoad)
                 {
                     ui.OnInitialization();
                     ui.firstLoad = true;
-                }*/
+                }
+                var VIui = VoidInventory.Ins.uis.Elements[VIUI.NameKey];
                 //ui.ChangeItem(ItemID.RottenChunk);
-                ref bool visible = ref ui.Info.IsVisible;
+                ref bool visible = ref VIui.Info.IsVisible;
                 visible = !visible;
             }
         }

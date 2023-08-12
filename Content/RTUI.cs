@@ -51,6 +51,16 @@ namespace VoidInventory.Content
             input.DrawRec[0] = Color.Red;
             bg.Register(input);
 
+            UIText VI = new("背包");
+            VI.SetSize(VI.TextSize);
+            VI.SetCenter(0, 30, 0.5f, 0);
+            VI.Events.OnLeftClick += evt =>
+            {
+                Info.IsVisible = false;
+                VoidInventory.Ins.uis.Elements[VIUI.NameKey].Info.IsVisible = true;
+            };
+            bg.Register(VI);
+
             left = new(-40, -102, 0.5f, 1f);
             left.SetPos(20, 82);
             left.DrawRec[0] = Color.White;
