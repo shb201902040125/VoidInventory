@@ -48,6 +48,31 @@ namespace VoidInventory
         {
             Item toInner = item;
             item = new(ItemID.None);
+            int type = item.type;
+            VIUI ui = VoidInventory.Ins.uis.Elements[VIUI.NameKey] as VIUI;
+            UIItemTex tex = new(type);
+            var uiItems = VIUI.items;
+            if (uiItems.TryAdd(type, tex))
+            {
+                int count = uiItems.Count;
+                tex.SetPos(count % 6 * 56 + 10, count / 6 * 56 + 10);
+                tex.Events.OnLeftClick += evt =>
+                {
+                    ui.rightView.ClearAllElements();
+                    int j = 0;
+                    foreach (Item i in items[type])
+                    {
+                        UIItemSlot slot = new(i)
+                        {
+                            CanTakeOutSlot = new(x => true)
+                        };
+                        slot.SetPos(j % 6 * 56 + 10, j / 6 * 56 + 10);
+                        ui.rightView.AddElement(slot);
+                        j++;
+                    }
+                };
+                ui.leftView.AddElement(tex);
+            }
             if (mergaTask is null)
             {
                 //未有合并线程，创建并启动合并线程
@@ -110,13 +135,6 @@ namespace VoidInventory
             {
                 //未有该种物品，直接将拆分结果设为储存
                 items[item.type] = willPuts;
-                VIUI ui = VoidInventory.Ins.uis.Elements[VIUI.NameKey] as VIUI;
-                UIItemTex slot = new(item.type);
-                var uiItems = VIUI.items;
-                int count = uiItems.Count;
-                slot.SetPos(count % 6 * 56 + 10, count / 6 * 56 + 10);
-                uiItems.Add(slot);
-                ui.leftView.AddElement(slot);
             }
             //检查合并任务队列是否清空
             if (mergaQueue.TryDequeue(out Item nextItem))

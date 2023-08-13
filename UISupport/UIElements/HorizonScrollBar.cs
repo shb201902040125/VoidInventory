@@ -31,7 +31,7 @@ namespace VoidInventory.UISupport.UIElements
             Info.LeftMargin.Pixel = 5f;
             Info.RightMargin.Pixel = 5f;
             Info.IsSensitive = true;
-            Tex = T2D("ShopLookup/UISupport/Asset/VerticalScrollbarInner");
+            Tex = T2D("VoidInventory/UISupport/Asset/VerticalScrollbarInner");
             WheelPixel = wheelPixel;
             WheelValue = wheelValue;
             Info.IsHidden = hide;
@@ -55,7 +55,7 @@ namespace VoidInventory.UISupport.UIElements
         public override void OnInitialization()
         {
             base.OnInitialization();
-            inner = new UIImage(T2D("ShopLookup/UISupport/Asset/HorizontalScrollbarInner"), 26, 16);
+            inner = new UIImage(T2D("VoidInventory/UISupport/Asset/HorizontalScrollbarInner"), 26, 16);
             inner.Info.Top.Pixel = -(inner.Info.Height.Pixel - Info.Height.Pixel) / 2f;
             inner.ChangeColor(Color.White * alpha);
             inner.Info.IsHidden = hide;

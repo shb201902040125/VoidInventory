@@ -7,7 +7,7 @@
         public UIBottom left, right;
         public UIContainerPanel leftView, rightView;
         public UIInputBox input;
-        internal static List<UIItemTex> items = new();
+        internal static Dictionary<int, UIItemTex> items = new();
         public override void OnInitialization()
         {
             base.OnInitialization();
