@@ -21,7 +21,7 @@ namespace VoidInventory
         static List<Item> SplitItems(Item item)
         {
             List<Item> list = new();
-            while (item.stack < item.maxStack)
+            while (item.stack > item.maxStack)
             {
                 Item newItem = new(item.type);
                 int move = Math.Min(item.stack, newItem.maxStack);
@@ -36,6 +36,7 @@ namespace VoidInventory
         {
             if (mergaTask is null && mergaQueue.Count > 0)
             {
+                Main.NewText("Task Start");
                 mergaTask = new(() => Merga_Inner(mergaQueue.Dequeue()));
                 mergaTask.Start();
             }
@@ -50,6 +51,7 @@ namespace VoidInventory
             item = new(ItemID.None);
             if (mergaTask is null)
             {
+                Main.NewText("Task Start");
                 //未有合并线程，创建并启动合并线程
                 mergaTask = new(() => Merga_Inner(toInner));
                 mergaTask.Start();
@@ -133,6 +135,7 @@ namespace VoidInventory
                 }
                 //清除合并线程
                 mergaTask = null;
+                Main.NewText("Task Finish");
             }
         }
         /// <summary>
