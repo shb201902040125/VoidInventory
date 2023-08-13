@@ -17,7 +17,7 @@
             CanDrag = false;
             baseX ??= x;
             baseY ??= y;
-            button = new(T2D("ShopLookup/UISupport/Asset/Side"), 20, 42);
+            button = new(T2D("VoidInventory/UISupport/Asset/Side"), 20, 42);
             this.dir = dir;
             switch (dir)
             {
