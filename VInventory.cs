@@ -1,15 +1,23 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
+using Terraria.GameContent.Creative;
 using Terraria.ModLoader.IO;
 using VoidInventory.Content;
+using VoidInventory.Filters;
+using VoidInventory.Orders;
 
 namespace VoidInventory
 {
     public class VInventory
     {
         static Dictionary<Version, Action<VInventory, TagCompound>> LoadMethod = new();
+        internal static Filter<Item, IEnumerable<Item>> currentFilter;
         internal Dictionary<int, List<Item>> items = new();
         internal List<RecipeTask> recipeTasks = new();
+        /// <summary>
+        /// 如果此值为True，UI应当不可交互
+        /// </summary>
+        internal bool Updating;
         Task mergaTask = null;
         Queue<Item> mergaQueue = new();
         Dictionary<int, int> tileMap = new();
@@ -76,7 +84,6 @@ namespace VoidInventory
             }
             if (mergaTask is null)
             {
-                Main.NewText("Task Start");
                 //未有合并线程，创建并启动合并线程
                 mergaTask = new(() => Merga_Inner(toInner));
                 mergaTask.Start();
@@ -89,6 +96,7 @@ namespace VoidInventory
         }
         public void Merga_Inner(Item item, bool ignoreRecipe = false)
         {
+            Updating = true;
             //将物品拆分(防止超出堆叠)
             List<Item> willPuts = SplitItems(item);
             if (items.TryGetValue(item.type, out List<Item> held))
@@ -153,8 +161,32 @@ namespace VoidInventory
                 }
                 //清除合并线程
                 mergaTask = null;
-                Main.NewText("Task Finish");
+                //进行刷新UI的回调
+                RefreshUI(/**/);
             }
+        }
+        void RefreshUI(Filter<Item, IEnumerable<Item>> filter = null)
+        {
+            currentFilter = filter ?? currentFilter;
+            List<Item> forUI = new();
+            if (currentFilter is null)
+            {
+                foreach (var pair in items)
+                {
+                    forUI.AddRange(pair.Value);
+                }
+            }
+            else
+            {
+                foreach (var pair in items)
+                {
+                    forUI.AddRange(currentFilter.FilterItems(pair.Value));
+                }
+            }
+            //用forUI刷新UI界面
+            // TODO
+
+            Updating = false;
         }
         /// <summary>
         /// 将背包里所有物品进行合并(以压缩空间)
@@ -162,6 +194,7 @@ namespace VoidInventory
         /// </summary>
         public void MergaAllInInventory()
         {
+            Updating = true;
             var buffer = items;
             items = new();
             foreach (var _items in buffer.Values)
@@ -200,6 +233,7 @@ namespace VoidInventory
                     }
                 }
             }
+            Updating = false;
         }
         /// <summary>
         /// 进行合成尝试
@@ -226,7 +260,11 @@ namespace VoidInventory
             tileMap.Clear();
             foreach (var pair in items.Values)
             {
-                tileMap.Add(pair[0].createTile, pair.Sum(i => i.stack));
+                if (pair[0].createTile == -1)
+                {
+                    continue;
+                }
+                tileMap[pair[0].createTile] = pair.Sum(i => i.stack);
             }
             tileMap.Remove(-1);
             HasWater = items.ContainsKey(ItemID.WaterBucket) || items.ContainsKey(ItemID.BottomlessBucket);
