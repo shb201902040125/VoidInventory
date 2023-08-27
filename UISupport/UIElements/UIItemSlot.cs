@@ -21,6 +21,7 @@
         /// </summary>
         public bool Infinity;
         public bool IgnoreOne;
+        public bool drawStack = true;
         /// <summary>
         /// 框内物品
         /// </summary>
@@ -210,7 +211,7 @@
                     new Vector2(frame.Width, frame.Height) / 2f, 1 * frame.AutoScale(), 0, 0);
 
                 //绘制物品左下角那个代表数量的数字
-                if (ContainedItem.stack > 1 || IgnoreOne)
+                if (drawStack && (ContainedItem.stack > 1 || IgnoreOne))
                 {
                     sb.DrawString(font, ContainedItem.stack.ToString(), new Vector2(DrawRectangle.X + 10, DrawRectangle.Y + DrawRectangle.Height - 20), StackColor * Opacity, 0f, Vector2.Zero, 0.8f, SpriteEffects.None, 0f);
                 }

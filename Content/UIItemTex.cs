@@ -60,7 +60,7 @@
                 sb.Draw(TextureAssets.Item[ContainedItem.type].Value, new Vector2(DrawRectangle.X + DrawRectangle.Width / 2,
                     DrawRectangle.Y + DrawRectangle.Height / 2), frame, Color.White * Opacity, 0f,
                     new Vector2(frame.Width, frame.Height) / 2f, 1 * frame.AutoScale(), 0, 0);
-                sb.DrawString(font, ContainedItem.stack.ToString(), new Vector2(DrawRectangle.X + 10, DrawRectangle.Y + DrawRectangle.Height - 20), StackColor * Opacity, 0f, Vector2.Zero, 0.8f, SpriteEffects.None, 0f);
+                //sb.DrawString(font, ContainedItem.stack.ToString(), new Vector2(DrawRectangle.X + 10, DrawRectangle.Y + DrawRectangle.Height - 20), StackColor * Opacity, 0f, Vector2.Zero, 0.8f, SpriteEffects.None, 0f);
             }
         }
         /// <summary>

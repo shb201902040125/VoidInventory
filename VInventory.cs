@@ -48,32 +48,6 @@ namespace VoidInventory
         public void Merga(ref Item item)
         {
             Item toInner = item;
-            item = new(ItemID.None);
-            int type = item.type;
-            VIUI ui = VoidInventory.Ins.uis.Elements[VIUI.NameKey] as VIUI;
-            UIItemTex tex = new(type);
-            var uiItems = VIUI.items;
-            if (uiItems.TryAdd(type, tex))
-            {
-                int count = uiItems.Count;
-                tex.SetPos(count % 6 * 56 + 10, count / 6 * 56 + 10);
-                tex.Events.OnLeftClick += evt =>
-                {
-                    ui.rightView.ClearAllElements();
-                    int j = 0;
-                    foreach (Item i in items[type])
-                    {
-                        UIItemSlot slot = new(i)
-                        {
-                            CanTakeOutSlot = new(x => true)
-                        };
-                        slot.SetPos(j % 6 * 56 + 10, j / 6 * 56 + 10);
-                        ui.rightView.AddElement(slot);
-                        j++;
-                    }
-                };
-                ui.leftView.AddElement(tex);
-            }
             if (mergaTask is null)
             {
                 Main.NewText("Task Start");
@@ -86,6 +60,56 @@ namespace VoidInventory
                 //已有合并线程，添加到任务队列
                 mergaQueue.Enqueue(toInner);
             }
+            int type = item.type;
+            VIUI ui = VoidInventory.Ins.uis.Elements[VIUI.NameKey] as VIUI;
+            var uiItems = ui.items;
+            if (!uiItems.TryGetValue(type, out var tex))
+            {
+                tex = new(type);
+                int count = uiItems.Count;
+                uiItems.Add(type, tex);
+                tex.SetPos(count % 6 * 56 + 10, count / 6 * 56 + 10);
+                tex.Events.OnLeftClick += evt =>
+                {
+                    VIUI.focusType = type;
+                    ui.rightView.ClearAllElements();
+                    int j = 0;
+                    foreach (Item i in items[type])
+                    {
+                        UIItemSlot slot = new(i)
+                        {
+                            CanTakeOutSlot = new(x => true),
+                        };
+                        slot.SetPos(j % 6 * 56 + 10, j / 6 * 56 + 10);
+                        slot.OnPickItem += uie =>
+                        {
+                            items[type].Remove(i);
+                            if (items.Count == 0)
+                            {
+                                uiItems.Remove(type);
+                                ui.rightView.ClearAllElements();
+                                VIUI.focusType = -1;
+                            }
+                            else
+                            {
+                                tex.Events.LeftClick(slot);
+                            }
+                        };
+                        ui.rightView.AddElement(slot);
+                        j++;
+                    }
+                };
+                ui.leftView.AddElement(tex);
+            }
+            else
+            {
+                foreach (Item si in SplitItems(item))
+                {
+                    items[type].Add(si);
+                }
+                tex.Events.LeftClick(ui.leftView);
+            }
+            item = new(ItemID.None);
         }
         public void Merga_Inner(Item item, bool ignoreRecipe = false)
         {
@@ -226,7 +250,8 @@ namespace VoidInventory
             tileMap.Clear();
             foreach (var pair in items.Values)
             {
-                tileMap.Add(pair[0].createTile, pair.Sum(i => i.stack));
+                if (pair[0].createTile == -1) continue;
+                tileMap[pair[0].createTile] = pair.Sum(i => i.stack);
             }
             tileMap.Remove(-1);
             HasWater = items.ContainsKey(ItemID.WaterBucket) || items.ContainsKey(ItemID.BottomlessBucket);
