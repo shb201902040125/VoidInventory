@@ -6,7 +6,8 @@ using System.Threading.Tasks;
 
 namespace VoidInventory.Orders
 {
-    internal abstract class Order<TInput,TBy> where TBy : IEquatable<TBy>
+    internal abstract class Order<T>
     {
+        public abstract void OrderItems(ref List<T> items);
     }
 }

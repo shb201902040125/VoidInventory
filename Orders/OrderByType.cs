@@ -6,7 +6,11 @@ using System.Threading.Tasks;
 
 namespace VoidInventory.Orders
 {
-    internal class OrderByType
+    internal class OrderItemByType : Order<Item>
     {
+        public override void OrderItems(ref List<Item> items)
+        {
+            items= items.OrderBy(item => item.type).ToList();
+        }
     }
 }
