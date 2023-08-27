@@ -30,7 +30,7 @@ namespace VoidInventory
         public int TaskState = 0;
         public int CountTarget;
         internal Dictionary<int, Dictionary<int, bool>> exclude = new();
-        public RecipeTask(Recipe recipe, int state = 0, int count = -1)
+        public RecipeTask(Recipe recipe, int state = 0, int count = 10)
         {
             RecipeTarget = recipe;
             TaskState = state;

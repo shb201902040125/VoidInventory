@@ -57,7 +57,10 @@ namespace VoidInventory.Content
             VI.Events.OnLeftClick += evt =>
             {
                 Info.IsVisible = false;
-                VoidInventory.Ins.uis.Elements[VIUI.NameKey].Info.IsVisible = true;
+                var viui = VoidInventory.Ins.uis.Elements[VIUI.NameKey];
+                viui.Info.IsVisible = true;
+                ((VIUI)viui).bg.SetPos(bg.Info.TotalLocation);
+                viui.Calculation();
             };
             bg.Register(VI);
 

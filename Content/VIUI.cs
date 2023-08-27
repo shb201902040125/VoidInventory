@@ -7,7 +7,8 @@
         public UIBottom left, right;
         public UIContainerPanel leftView, rightView;
         public UIInputBox input;
-        internal static Dictionary<int, UIItemTex> items = new();
+        public static int focusType = -1;
+        public Dictionary<int, UIItemTex> items = new();
         public override void OnInitialization()
         {
             base.OnInitialization();
@@ -32,7 +33,10 @@
             RT.Events.OnLeftClick += evt =>
             {
                 Info.IsVisible = false;
-                VoidInventory.Ins.uis.Elements[RTUI.NameKey].Info.IsVisible = true;
+                var rtui = VoidInventory.Ins.uis.Elements[RTUI.NameKey];
+                rtui.Info.IsVisible = true;
+                ((RTUI)rtui).bg.SetPos(bg.Info.TotalLocation);
+                rtui.Calculation();
             };
             bg.Register(RT);
 
