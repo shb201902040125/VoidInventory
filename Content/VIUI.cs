@@ -1,4 +1,6 @@
-﻿namespace VoidInventory.Content
+﻿using System.Linq;
+
+namespace VoidInventory.Content
 {
     public class VIUI : ContainerElement
     {
@@ -7,7 +9,7 @@
         public UIBottom left, right;
         public UIContainerPanel leftView, rightView;
         public UIInputBox input;
-        public static int focusType = -1;
+        public int focusType = -1;
         public Dictionary<int, UIItemTex> items = new();
         public override void OnInitialization()
         {
@@ -82,6 +84,18 @@
             dbg.Info.IsVisible = false;
             dbg.CanDrag = true;
             Register(dbg);
+        }
+        public void SortVI(int id)
+        {
+            foreach (UIItemTex item in leftView.InnerUIE.Cast<UIItemTex>())
+            {
+                if (item.id > id)
+                {
+                    item.id--;
+                    item.SetPos(id % 6 * 56 + 10, id / 6 * 56 + 10);
+                }
+            }
+            leftView.Calculation();
         }
     }
 }

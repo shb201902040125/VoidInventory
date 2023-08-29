@@ -23,6 +23,7 @@
         /// 透明度
         /// </summary>
         public float Opacity { get; set; }
+        public int id;
         public UIItemTex(int itemType, Texture2D texture = default)
         {
             Opacity = 1f;

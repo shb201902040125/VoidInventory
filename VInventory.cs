@@ -69,9 +69,9 @@ namespace VoidInventory
                 int count = uiItems.Count;
                 uiItems.Add(type, tex);
                 tex.SetPos(count % 6 * 56 + 10, count / 6 * 56 + 10);
-                tex.Events.OnLeftClick += evt =>
+                tex.Events.OnLeftDown += evt =>
                 {
-                    VIUI.focusType = type;
+                    ui.focusType = type;
                     ui.rightView.ClearAllElements();
                     int j = 0;
                     foreach (Item i in items[type])
@@ -88,7 +88,9 @@ namespace VoidInventory
                             {
                                 uiItems.Remove(type);
                                 ui.rightView.ClearAllElements();
-                                VIUI.focusType = -1;
+                                ui.focusType = -1;
+                                ui.leftView.RemoveElement(tex);
+                                ui.SortVI(tex.id);
                             }
                             else
                             {
@@ -99,6 +101,7 @@ namespace VoidInventory
                         j++;
                     }
                 };
+                tex.id = count + 1;
                 ui.leftView.AddElement(tex);
             }
             else
