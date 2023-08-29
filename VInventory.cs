@@ -1,10 +1,8 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
-using Terraria.GameContent.Creative;
 using Terraria.ModLoader.IO;
 using VoidInventory.Content;
 using VoidInventory.Filters;
-using VoidInventory.Orders;
 
 namespace VoidInventory
 {
@@ -70,61 +68,24 @@ namespace VoidInventory
             }
             int type = item.type;
             VIUI ui = VoidInventory.Ins.uis.Elements[VIUI.NameKey] as VIUI;
-            var uiItems = ui.items;
-            if (!uiItems.TryGetValue(type, out var tex))
+            var uiItems = ui.Items;
+            List<Item> targetItems = items[type];
+            UIItemTex tex;
+            if (!uiItems.Any(x => x.ContainedItem.type == type))
             {
                 tex = new(type);
-                int count = uiItems.Count;
-                uiItems.Add(type, tex);
+                int count = uiItems.Count();
                 tex.SetPos(count % 6 * 56 + 10, count / 6 * 56 + 10);
-                tex.Events.OnLeftDown += evt =>
-                {
-                    ui.focusType = type;
-                    ui.rightView.ClearAllElements();
-                    int j = 0;
-                    foreach (Item i in items[type])
-                    {
-                        UIItemSlot slot = new(i)
-                        {
-                            CanTakeOutSlot = new(x => true),
-                        };
-                        slot.SetPos(j % 6 * 56 + 10, j / 6 * 56 + 10);
-                        slot.OnPickItem += uie =>
-                        {
-                            items[type].Remove(i);
-                            if (items.Count == 0)
-                            {
-                                uiItems.Remove(type);
-                                ui.rightView.ClearAllElements();
-                                ui.focusType = -1;
-                                ui.leftView.RemoveElement(tex);
-                                ui.SortVI(tex.id);
-                            }
-                            else
-                            {
-                                tex.Events.LeftClick(slot);
-                            }
-                        };
-                        ui.rightView.AddElement(slot);
-                        j++;
-                    }
-                };
-                tex.id = count + 1;
+                ui.LoadClickEvent(tex, type, targetItems);
                 ui.leftView.AddElement(tex);
-            }
-            if (mergaTask is null)
-            {
-                //未有合并线程，创建并启动合并线程
-                mergaTask = new(() => Merga_Inner(toInner));
-                mergaTask.Start();
             }
             else
             {
                 foreach (Item si in SplitItems(item))
                 {
-                    items[type].Add(si);
+                    targetItems.Add(si);
                 }
-                tex.Events.LeftClick(ui.leftView);
+                if (ui.focusType == type) ui.SortRight(targetItems);
             }
             item = new(ItemID.None);
         }

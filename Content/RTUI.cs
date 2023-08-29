@@ -61,6 +61,7 @@ namespace VoidInventory.Content
                 viui.Info.IsVisible = true;
                 ((VIUI)viui).bg.SetPos(bg.Info.TotalLocation);
                 viui.Calculation();
+                VIPlayer.vi = true;
             };
             bg.Register(VI);
 

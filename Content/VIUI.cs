@@ -10,7 +10,7 @@ namespace VoidInventory.Content
         public UIContainerPanel leftView, rightView;
         public UIInputBox input;
         public int focusType = -1;
-        public Dictionary<int, UIItemTex> items = new();
+        public IEnumerable<UIItemTex> Items => leftView.InnerUIE.Cast<UIItemTex>();
         public override void OnInitialization()
         {
             base.OnInitialization();
@@ -35,10 +35,11 @@ namespace VoidInventory.Content
             RT.Events.OnLeftClick += evt =>
             {
                 Info.IsVisible = false;
-                var rtui = VoidInventory.Ins.uis.Elements[RTUI.NameKey];
+                var rtui = VoidInventory.Ins.uis.Elements[RTUI.NameKey] as RTUI;
                 rtui.Info.IsVisible = true;
-                ((RTUI)rtui).bg.SetPos(bg.Info.TotalLocation);
+                rtui.bg.SetPos(bg.Info.TotalLocation);
                 rtui.Calculation();
+                VIPlayer.vi = false;
             };
             bg.Register(RT);
 
@@ -85,17 +86,54 @@ namespace VoidInventory.Content
             dbg.CanDrag = true;
             Register(dbg);
         }
-        public void SortVI(int id)
+        public void SortLeft()
         {
+            int count = 0;
             foreach (UIItemTex item in leftView.InnerUIE.Cast<UIItemTex>())
             {
-                if (item.id > id)
-                {
-                    item.id--;
-                    item.SetPos(id % 6 * 56 + 10, id / 6 * 56 + 10);
-                }
+                item.SetPos(count % 6 * 56 + 10, count / 6 * 56 + 10);
+                count++;
             }
             leftView.Calculation();
+        }
+        public void SortRight(List<Item> targetItems)
+        {
+            rightView.ClearAllElements();
+            int count = 0;
+            foreach (Item item in targetItems)
+            {
+                UIItemSlot slot = new(item)
+                {
+                    CanTakeOutSlot = new(x => true),
+                };
+                slot.SetPos(count % 6 * 56 + 10, count / 6 * 56 + 10);
+                Item target = item;
+                slot.OnPickItem += uie =>
+                {
+                    targetItems.Remove(target);
+                    if (targetItems.Count == 0)
+                    {
+                        rightView.ClearAllElements();
+                        focusType = -1;
+                        leftView.InnerUIE.RemoveAll(x => x is UIItemTex tex && tex.ContainedItem.type == target.type);
+                        SortLeft();
+                    }
+                    else
+                    {
+                        SortRight(targetItems);
+                    }
+                };
+                rightView.AddElement(slot);
+                count++;
+            }
+        }
+        public void LoadClickEvent(UIItemTex tex, int type, List<Item> targetItems)
+        {
+            tex.Events.OnLeftDown += evt =>
+            {
+                focusType = type;
+                SortRight(targetItems);
+            };
         }
     }
 }
