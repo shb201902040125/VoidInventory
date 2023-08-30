@@ -15,7 +15,7 @@ namespace VoidInventory.Content
         public bool[] down;
         private int timer;
         public RecipeTask RT { get; private set; }
-        public readonly static DynamicSpriteFont font = FontAssets.MouseText.Value;
+        public static readonly DynamicSpriteFont font = FontAssets.MouseText.Value;
         public UIRecipeTask(Recipe recipe) : base(recipe)
         {
             Player player = Main.LocalPlayer;
@@ -68,7 +68,11 @@ namespace VoidInventory.Content
             };
             func.Events.OnRightClick += evt =>
             {
-                if (++RT.TaskState > 2) RT.TaskState = 0;
+                if (++RT.TaskState > 2)
+                {
+                    RT.TaskState = 0;
+                }
+
                 func.ChangeText(GTV($"Func.{RT.TaskState}"));
             };
             func.Events.OnMouseOver += evt => func.color = R;
@@ -97,11 +101,26 @@ namespace VoidInventory.Content
         public override void Update(GameTime gt)
         {
             base.Update(gt);
-            if (down[0]) Change(-1, 15);
-            else if (down[1]) Change(-1, 4);
-            else if (down[2]) Change(1, 15);
-            else if (down[3]) Change(1, 4);
-            else timer = 0;
+            if (down[0])
+            {
+                Change(-1, 15);
+            }
+            else if (down[1])
+            {
+                Change(-1, 4);
+            }
+            else if (down[2])
+            {
+                Change(1, 15);
+            }
+            else if (down[3])
+            {
+                Change(1, 4);
+            }
+            else
+            {
+                timer = 0;
+            }
         }
         private int RequireCount(int itemType)
         {
@@ -111,12 +130,15 @@ namespace VoidInventory.Content
         }
         private void Change(int count, int frame)
         {
-            if (RT.TaskState == 2) return;
+            if (RT.TaskState == 2)
+            {
+                return;
+            }
+
             ref int target = ref RT.CountTarget;
             if (timer++ % frame == 0)
             {
-                if (RT.TaskState == 0) target = Math.Max(0, target + count);
-                else target = Math.Clamp(target + count, 0, 9999);
+                target = RT.TaskState == 0 ? Math.Max(0, target + count) : Math.Clamp(target + count, 0, 9999);
             }
         }
         public override void DrawSelf(SpriteBatch sb)
@@ -218,7 +240,7 @@ namespace VoidInventory.Content
                         ingredient.ReDraw += sb =>
                         {
                             ingredient.DrawSelf(sb);
-                            var font = FontAssets.MouseText.Value;
+                            DynamicSpriteFont font = FontAssets.MouseText.Value;
                             int amount = RequireCount(ingredient.ContainedItem.type);
                             string text = amount.ToString();
                             Vector2 origin = font.MeasureString(text) / 2f;
@@ -236,7 +258,11 @@ namespace VoidInventory.Content
                                 y += 52 + 4 + 28;
                             }
                         }
-                        else y += 52 + 4 + 28;
+                        else
+                        {
+                            y += 52 + 4 + 28;
+                        }
+
                         count++;
                     }
                     x = 20;
@@ -253,7 +279,7 @@ namespace VoidInventory.Content
                         line.SetPos(x, y - 17);
                         ui.detail.AddElement(line);
 
-                        foreach (var (groupID, stack) in groups)
+                        foreach ((int groupID, int stack) in groups)
                         {
 
                             RecipeGroup group = RecipeGroup.recipeGroups[groupID];

@@ -19,7 +19,11 @@ namespace VoidInventory.Content
         public override void OnInitialization()
         {
             base.OnInitialization();
-            if (Main.gameMenu) return;
+            if (Main.gameMenu)
+            {
+                return;
+            }
+
             RemoveAll();
             bg = new(default, 800, 600);
             bg.SetCenter(0, 0, 0.5f, 0.5f);
@@ -57,11 +61,10 @@ namespace VoidInventory.Content
             VI.Events.OnLeftClick += evt =>
             {
                 Info.IsVisible = false;
-                var viui = VoidInventory.Ins.uis.Elements[VIUI.NameKey];
+                ContainerElement viui = VoidInventory.Ins.uis.Elements[VIUI.NameKey];
                 viui.Info.IsVisible = true;
                 ((VIUI)viui).bg.SetPos(bg.Info.TotalLocation);
                 viui.Calculation();
-                VIPlayer.vi = true;
             };
             bg.Register(VI);
 
@@ -124,18 +127,32 @@ namespace VoidInventory.Content
         {
             rightView.ClearAllElements();
             int type = focusItem.ContainedItem.type;
-            bool have = TryFindRecipes(x => x.createItem.type == type || x.ContainsIngredient(type), out var recipes);
+            bool have = TryFindRecipes(x => x.createItem.type == type || x.ContainsIngredient(type), out IEnumerable<Recipe> recipes);
             string text = input.Text;
             if (text.Length > 0)
             {
-                if (type == 0) TryFindRecipes(x => x.createItem.Name.Contains(text), out recipes);
-                else recipes = recipes.Where(x => x.createItem.Name.Contains(text));
+                if (type == 0)
+                {
+                    TryFindRecipes(x => x.createItem.Name.Contains(text), out recipes);
+                }
+                else
+                {
+                    recipes = recipes.Where(x => x.createItem.Name.Contains(text));
+                }
             }
-            if (!have || !recipes.Any()) return;
+            if (!have || !recipes.Any())
+            {
+                return;
+            }
+
             int x = 10, y = 10;
             foreach (Recipe r in recipes)
             {
-                if (r.createItem.type == ItemID.None) continue;
+                if (r.createItem.type == ItemID.None)
+                {
+                    continue;
+                }
+
                 UIRecipeItem recipe = new(r);
                 recipe.SetPos(x, y);
                 recipe.Info.IsSensitive = true;
@@ -171,7 +188,7 @@ namespace VoidInventory.Content
                 id = TaskCount
             };
             task.SetSize(-20, 52, 1);
-            task.SetPos(10, 10 + TaskCount * 62);
+            task.SetPos(10, 10 + (TaskCount * 62));
             leftView.AddElement(task);
         }
         public void SortRecipeTask(int id)

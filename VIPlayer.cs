@@ -29,10 +29,10 @@ namespace VoidInventory
                 if (!r.firstLoad)
                 {
                     r.OnInitialization();
-                    foreach (int item in vInventory.items.Keys)
+                    foreach (int item in vInventory._items.Keys)
                     {
                         UIItemTex tex = new(item);
-                        v.LoadClickEvent(tex, item, vInventory.items[item]);
+                        v.LoadClickEvent(tex, item, vInventory._items[item]);
                         v.leftView.AddElement(tex);
                     }
                     v.SortLeft();
@@ -43,6 +43,7 @@ namespace VoidInventory
                 visible = !visible;
             }
         }
-        static BaseUIElement GetUI(string name) => VoidInventory.Ins.uis.Elements[name];
+
+        private static BaseUIElement GetUI(string name) => VoidInventory.Ins.uis.Elements[name];
     }
 }

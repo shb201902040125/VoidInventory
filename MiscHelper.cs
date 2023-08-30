@@ -6,7 +6,6 @@ global using System.Collections.Generic;
 global using System.Reflection;
 global using Terraria;
 global using Terraria.GameContent;
-global using Terraria.GameContent.UI;
 global using Terraria.ID;
 global using Terraria.ModLoader;
 global using Terraria.UI.Chat;
@@ -37,7 +36,7 @@ namespace VoidInventory
         public static Rectangle RecCenter(Vector2 center, int width, int height)
         {
             Point p = center.ToPoint();
-            return new Rectangle(p.X - width / 2, p.Y - height / 2, width, height);
+            return new Rectangle(p.X - (width / 2), p.Y - (height / 2), width, height);
         }
         public static Rectangle RecCenter(Vector2 center, float width, float height) => RecCenter(center, (int)width, (int)height);
 
@@ -114,19 +113,11 @@ namespace VoidInventory
         public static string Path(this object type, string fileName) => type.Path(false) + fileName;
         public static Texture2D Tex(this Entity entity)
         {
-            if (entity is Projectile proj)
-            {
-                return TextureAssets.Projectile[proj.type].Value;
-            }
-            if (entity is NPC npc)
-            {
-                return TextureAssets.Npc[npc.type].Value;
-            }
-            if (entity is Item item)
-            {
-                return TextureAssets.Item[item.type].Value;
-            }
-            throw new Exception("不支持的Entity类型");
+            return entity is Projectile proj
+                ? TextureAssets.Projectile[proj.type].Value
+                : entity is NPC npc
+                ? TextureAssets.Npc[npc.type].Value
+                : entity is Item item ? TextureAssets.Item[item.type].Value : throw new Exception("不支持的Entity类型");
         }
         public static Rectangle ScaleRec(this Rectangle r, Vector2 scale)
         {
@@ -192,7 +183,7 @@ namespace VoidInventory
         {
             Texture2D texture = TextureAssets.MagicPixel.Value;
             Vector2 unit = end - start;
-            spriteBatch.Draw(texture, start + unit / 2 - Main.screenPosition, new Rectangle(0, 0, 1, 1), color, unit.ToRotation() + MathHelper.PiOver2, new Vector2(0.5f, 0.5f), new Vector2(wide, unit.Length()), SpriteEffects.None, 0f);
+            spriteBatch.Draw(texture, start + (unit / 2) - Main.screenPosition, new Rectangle(0, 0, 1, 1), color, unit.ToRotation() + MathHelper.PiOver2, new Vector2(0.5f, 0.5f), new Vector2(wide, unit.Length()), SpriteEffects.None, 0f);
         }
         /// <summary>
         /// 获取相对于给定大小的自动缩放修正
@@ -202,9 +193,55 @@ namespace VoidInventory
         {
             float ZoomX = drawRec.Size().X / (size * scale);
             float ZoomY = drawRec.Size().Y / (size * scale);
-            return 1f / Math.Max(MathF.Sqrt(ZoomX * ZoomX + ZoomY * ZoomY), 1);
+            return 1f / Math.Max(MathF.Sqrt((ZoomX * ZoomX) + (ZoomY * ZoomY)), 1);
         }
         public static UIGroupItem UGI(this UIItemSlot slot) => slot.ContainedItem?.GetGlobalItem<UIGroupItem>();
-        public static VIPlayer VIP(this Player player)=>player.GetModPlayer<VIPlayer>();
+        public static VIPlayer VIP(this Player player) => player.GetModPlayer<VIPlayer>();
+
+        public static void RemoveAll<TKey, TValue>(this Dictionary<TKey, TValue> dic, Func<KeyValuePair<TKey, TValue>, bool> func)
+        {
+            List<TKey> keys = new();
+            foreach (KeyValuePair<TKey, TValue> pair in dic)
+            {
+                if (func(pair))
+                {
+                    keys.Add(pair.Key);
+                }
+            }
+            foreach (TKey key in keys)
+            {
+                dic.Remove(key);
+            }
+        }
+        public static void RemoveAll<TKey, TValue>(this Dictionary<TKey, TValue> dic, Func<TKey, bool> func)
+        {
+            List<TKey> keys = new();
+            foreach (TKey key in dic.Keys)
+            {
+                if (func(key))
+                {
+                    keys.Add(key);
+                }
+            }
+            foreach (TKey key in keys)
+            {
+                dic.Remove(key);
+            }
+        }
+        public static void RemoveAll<TKey, TValue>(this Dictionary<TKey, TValue> dic, Func<TValue, bool> func)
+        {
+            List<TKey> keys = new();
+            foreach (KeyValuePair<TKey, TValue> pair in dic)
+            {
+                if (func(pair.Value))
+                {
+                    keys.Add(pair.Key);
+                }
+            }
+            foreach (TKey key in keys)
+            {
+                dic.Remove(key);
+            }
+        }
     }
 }

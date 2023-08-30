@@ -71,11 +71,11 @@ namespace VoidInventory.UISupport
         /// </summary>
         public void Load()
         {
-            var containers = from c in GetType().Assembly.GetTypes()
-                             where !c.IsAbstract && c.IsSubclassOf(typeof(ContainerElement))
-                             select c;
+            IEnumerable<Type> containers = from c in GetType().Assembly.GetTypes()
+                                           where !c.IsAbstract && c.IsSubclassOf(typeof(ContainerElement))
+                                           select c;
             ContainerElement element;
-            foreach (var c in containers)
+            foreach (Type c in containers)
             {
                 element = (ContainerElement)Activator.CreateInstance(c);
                 if (element.AutoLoad)
@@ -99,7 +99,7 @@ namespace VoidInventory.UISupport
             List<BaseUIElement> interact = new();
             ContainerElement child;
             Point mousePos = Main.MouseScreen.ToPoint();
-            foreach (var key in CallOrder)
+            foreach (string key in CallOrder)
             {
                 child = Elements[key];
                 child?.PreUpdate(gt);
@@ -119,7 +119,7 @@ namespace VoidInventory.UISupport
                 Main.LocalPlayer.mouseInterface = true;
             }
 
-            foreach (var ce in interact)
+            foreach (BaseUIElement ce in interact)
             {
                 if (!interactContainerElementsBuffer.Contains(ce))
                 {
@@ -128,7 +128,7 @@ namespace VoidInventory.UISupport
                 }
             }
 
-            foreach (var ce in interactContainerElementsBuffer)
+            foreach (BaseUIElement ce in interactContainerElementsBuffer)
             {
                 if (!interact.Contains(ce))
                 {
@@ -138,7 +138,7 @@ namespace VoidInventory.UISupport
             }
 
             interactContainerElementsBuffer = interact;
-            foreach (var ce in interactContainerElementsBuffer)
+            foreach (BaseUIElement ce in interactContainerElementsBuffer)
             {
                 if (ce.Info.IsMouseHover)
                 {
@@ -277,7 +277,7 @@ namespace VoidInventory.UISupport
         /// </summary>
         public void Calculation()
         {
-            foreach (var child in Elements.Values)
+            foreach (ContainerElement child in Elements.Values)
             {
                 child?.Calculation();
             }
@@ -341,7 +341,7 @@ namespace VoidInventory.UISupport
         /// </summary>
         public void OnResolutionChange()
         {
-            foreach (var key in Elements)
+            foreach (KeyValuePair<string, ContainerElement> key in Elements)
             {
                 key.Value.OnResolutionChange?.Invoke();
             }

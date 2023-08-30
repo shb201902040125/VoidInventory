@@ -141,7 +141,7 @@
                         if (ContainedItem.stack > ContainedItem.maxStack)
                         {
                             //计算鼠标物品数量，并将框内物品数量修改为数量上限
-                            var exceed = ContainedItem.stack - ContainedItem.maxStack;
+                            int exceed = ContainedItem.stack - ContainedItem.maxStack;
                             ContainedItem.stack = ContainedItem.maxStack;
                             Main.mouseItem.stack = exceed;
                         }
@@ -157,7 +157,7 @@
                         && (CanTakeOutSlot == null || CanTakeOutSlot(ContainedItem)))
                     {
                         //交换框内物品和鼠标物品
-                        var tmp = Main.mouseItem.Clone();
+                        Item tmp = Main.mouseItem.Clone();
                         Main.mouseItem = ContainedItem;
                         ContainedItem = tmp;
                     }
@@ -195,7 +195,7 @@
                 Main.HoverItem = ContainedItem.Clone();
             }
             //获取当前UI部件的信息
-            var DrawRectangle = Info.TotalHitBox;
+            Rectangle DrawRectangle = Info.TotalHitBox;
             DrawRectangle.Width = 52;
             DrawRectangle.Height = 52;
             //绘制物品框
@@ -203,11 +203,11 @@
                 DrawColor * Opacity, SlotBackTexture, CornerSize, 1f);
             if (ContainedItem != null && ContainedItem.type != ItemID.None)
             {
-                var frame = Main.itemAnimations[ContainedItem.type] != null ? Main.itemAnimations[ContainedItem.type]
+                Rectangle frame = Main.itemAnimations[ContainedItem.type] != null ? Main.itemAnimations[ContainedItem.type]
                     .GetFrame(TextureAssets.Item[ContainedItem.type].Value) : Item.GetDrawHitbox(ContainedItem.type, null);
                 //绘制物品贴图
-                sb.Draw(TextureAssets.Item[ContainedItem.type].Value, new Vector2(DrawRectangle.X + DrawRectangle.Width / 2,
-                    DrawRectangle.Y + DrawRectangle.Height / 2), frame, Color.White * Opacity, 0f,
+                sb.Draw(TextureAssets.Item[ContainedItem.type].Value, new Vector2(DrawRectangle.X + (DrawRectangle.Width / 2),
+                    DrawRectangle.Y + (DrawRectangle.Height / 2)), frame, Color.White * Opacity, 0f,
                     new Vector2(frame.Width, frame.Height) / 2f, 1 * frame.AutoScale(), 0, 0);
 
                 //绘制物品左下角那个代表数量的数字
@@ -231,15 +231,15 @@
         /// <param name="scale"></param>
         public void DrawAdvBox(SpriteBatch sp, int x, int y, int w, int h, Color c, Texture2D img, Vector2 size4, float scale = 1f)
         {
-            var box = img;
-            var nw = (int)(w * scale);
-            var nh = (int)(h * scale);
+            Texture2D box = img;
+            int nw = (int)(w * scale);
+            int nh = (int)(h * scale);
             x += (w - nw) / 2;
             y += (h - nh) / 2;
             w = nw;
             h = nh;
-            var width = (int)size4.X;
-            var height = (int)size4.Y;
+            int width = (int)size4.X;
+            int height = (int)size4.Y;
             if (w < size4.X)
             {
                 w = width;
@@ -249,13 +249,13 @@
                 h = width;
             }
             sp.Draw(box, new Rectangle(x, y, width, height), new Rectangle(0, 0, width, height), c);
-            sp.Draw(box, new Rectangle(x + width, y, w - width * 2, height), new Rectangle(width, 0, box.Width - width * 2, height), c);
+            sp.Draw(box, new Rectangle(x + width, y, w - (width * 2), height), new Rectangle(width, 0, box.Width - (width * 2), height), c);
             sp.Draw(box, new Rectangle(x + w - width, y, width, height), new Rectangle(box.Width - width, 0, width, height), c);
-            sp.Draw(box, new Rectangle(x, y + height, width, h - height * 2), new Rectangle(0, height, width, box.Height - height * 2), c);
-            sp.Draw(box, new Rectangle(x + width, y + height, w - width * 2, h - height * 2), new Rectangle(width, height, box.Width - width * 2, box.Height - height * 2), c);
-            sp.Draw(box, new Rectangle(x + w - width, y + height, width, h - height * 2), new Rectangle(box.Width - width, height, width, box.Height - height * 2), c);
+            sp.Draw(box, new Rectangle(x, y + height, width, h - (height * 2)), new Rectangle(0, height, width, box.Height - (height * 2)), c);
+            sp.Draw(box, new Rectangle(x + width, y + height, w - (width * 2), h - (height * 2)), new Rectangle(width, height, box.Width - (width * 2), box.Height - (height * 2)), c);
+            sp.Draw(box, new Rectangle(x + w - width, y + height, width, h - (height * 2)), new Rectangle(box.Width - width, height, width, box.Height - (height * 2)), c);
             sp.Draw(box, new Rectangle(x, y + h - height, width, height), new Rectangle(0, box.Height - height, width, height), c);
-            sp.Draw(box, new Rectangle(x + width, y + h - height, w - width * 2, height), new Rectangle(width, box.Height - height, box.Width - width * 2, height), c);
+            sp.Draw(box, new Rectangle(x + width, y + h - height, w - (width * 2), height), new Rectangle(width, box.Height - height, box.Width - (width * 2), height), c);
             sp.Draw(box, new Rectangle(x + w - width, y + h - height, width, height), new Rectangle(box.Width - width, box.Height - height, width, height), c);
         }
     }

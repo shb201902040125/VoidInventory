@@ -39,13 +39,13 @@
             /// <returns></returns>
             public float GetPixelBaseParent(float pixel)
             {
-                return Percent * pixel + Pixel;
+                return (Percent * pixel) + Pixel;
             }
 
 
             public static PositionStyle operator +(PositionStyle ps1, PositionStyle ps2)
             {
-                var output = ps1;
+                PositionStyle output = ps1;
                 output.Pixel += ps2.Pixel;
                 output.Percent += ps2.Percent;
                 return output;
@@ -53,7 +53,7 @@
 
             public static PositionStyle operator -(PositionStyle ps1, PositionStyle ps2)
             {
-                var output = ps1;
+                PositionStyle output = ps1;
                 output.Pixel -= ps2.Pixel;
                 output.Percent -= ps2.Percent;
                 return output;
@@ -61,7 +61,7 @@
 
             public static PositionStyle operator *(PositionStyle ps1, float ps2)
             {
-                var output = ps1;
+                PositionStyle output = ps1;
                 output.Pixel *= ps2;
                 output.Percent *= ps2;
                 return output;
@@ -69,7 +69,7 @@
 
             public static PositionStyle operator /(PositionStyle ps1, float ps2)
             {
-                var output = ps1;
+                PositionStyle output = ps1;
                 output.Pixel /= ps2;
                 output.Percent /= ps2;
                 return output;
@@ -381,7 +381,7 @@
         {
             Calculation();
             defInfo = Info;
-            foreach (var uie in ChildrenElements)
+            foreach (BaseUIElement uie in ChildrenElements)
             {
                 uie.PostInitialization();
             }
@@ -404,11 +404,11 @@
         {
             ChildrenElements.ForEach(child =>
             {
-                if (child != null && child.IsVisible) 
+                if (child != null && child.IsVisible)
                 {
                     child.Update(gt);
                     child.Events.OnUpdate?.Invoke(child);
-                } 
+                }
             });
             Events.OnUpdate?.Invoke(this);
         }
@@ -420,7 +420,7 @@
         public virtual void Draw(SpriteBatch sb)
         {
             //声明光栅化状态，剔除状态为不剔除，开启剪切测试
-            var overflowHiddenRasterizerState = new RasterizerState
+            RasterizerState overflowHiddenRasterizerState = new RasterizerState
             {
                 CullMode = CullMode.None,
                 ScissorTestEnable = true
@@ -447,9 +447,9 @@
                 }
             }
             //设定gd是画笔绑定的图像设备
-            var gd = sb.GraphicsDevice;
+            GraphicsDevice gd = sb.GraphicsDevice;
             //储存绘制原剪切矩形
-            var scissorRectangle = gd.ScissorRectangle;
+            Rectangle scissorRectangle = gd.ScissorRectangle;
             //如果启用溢出隐藏
             if (Info.HiddenOverflow)
             {
@@ -680,7 +680,7 @@
         /// <returns>如果有则返回true，否则返回false</returns>
         public bool GetParentElementIsHiddenOverflow()
         {
-            return Info.HiddenOverflow || ParentElement != null && ParentElement.GetParentElementIsHiddenOverflow();
+            return Info.HiddenOverflow || (ParentElement != null && ParentElement.GetParentElementIsHiddenOverflow());
         }
         public Vector2 Pos(bool total = true) => HitBox(total).TopLeft();
         public Vector2 Center() => HitBox().Center();
@@ -698,8 +698,8 @@
         public void SetPos(Vector2 pos) => SetPos(pos.X, pos.Y);
         public void SetCenter(float x, float y, float Xpercent = 0, float Ypercent = 0)
         {
-            Info.Left.Set(x - Info.Width.Pixel / 2f, Xpercent);
-            Info.Top.Set(y - Info.Height.Pixel / 2f, Ypercent);
+            Info.Left.Set(x - (Info.Width.Pixel / 2f), Xpercent);
+            Info.Top.Set(y - (Info.Height.Pixel / 2f), Ypercent);
             Calculation();
         }
         public void SetCenter(Vector2 pos) => SetCenter(pos.X, pos.Y);
@@ -720,7 +720,7 @@
         {
             Info.Left = defInfo.Left;
             Info.Top = defInfo.Top;
-            foreach (var uie in ChildrenElements)
+            foreach (BaseUIElement uie in ChildrenElements)
             {
                 uie.ResetPos();
             }
@@ -728,7 +728,7 @@
         public void ResetState()
         {
             Info = defInfo;
-            foreach (var uie in ChildrenElements)
+            foreach (BaseUIElement uie in ChildrenElements)
             {
                 uie.ResetState();
             }

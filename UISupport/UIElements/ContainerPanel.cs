@@ -16,10 +16,9 @@ namespace VoidInventory.UISupport.UIElements
         }
         private InnerPanel _innerPanel;
         public List<BaseUIElement> InnerUIE => _innerPanel.ChildrenElements;
-        private VerticalScrollbar _verticalScrollbar;
-        public VerticalScrollbar Vscroll => _verticalScrollbar;
-        private HorizontalScrollbar _horizontalScrollbar;
-        public HorizontalScrollbar Hscroll => _horizontalScrollbar;
+
+        public VerticalScrollbar Vscroll { get; private set; }
+        public HorizontalScrollbar Hscroll { get; private set; }
         private float verticalWhellValue;
         private float horizontalWhellValue;
         private Vector2 innerPanelMinLocation;
@@ -47,13 +46,13 @@ namespace VoidInventory.UISupport.UIElements
         }
         public void SetVerticalScrollbar(VerticalScrollbar scrollbar)
         {
-            _verticalScrollbar = scrollbar;
+            Vscroll = scrollbar;
             scrollbar.View = this;
         }
 
         public void SetHorizontalScrollbar(HorizontalScrollbar scrollbar)
         {
-            _horizontalScrollbar = scrollbar;
+            Hscroll = scrollbar;
             scrollbar.View = this;
         }
 
@@ -70,13 +69,13 @@ namespace VoidInventory.UISupport.UIElements
         public override void Update(GameTime gt)
         {
             base.Update(gt);
-            if (HitBox().Contains(Main.MouseScreen.ToPoint()) && _verticalScrollbar != null | _horizontalScrollbar != null)
+            if (HitBox().Contains(Main.MouseScreen.ToPoint()) && Vscroll != null | Hscroll != null)
             {
                 PlayerInput.LockVanillaMouseScroll("VIScroll");
             }
-            if (_verticalScrollbar != null && verticalWhellValue != _verticalScrollbar.WheelValue)
+            if (Vscroll != null && verticalWhellValue != Vscroll.WheelValue)
             {
-                verticalWhellValue = _verticalScrollbar.WheelValue;
+                verticalWhellValue = Vscroll.WheelValue;
                 float maxY = MovableSize.Y;/* innerPanelMaxLocation.Y - _innerPanel.Info.TotalSize.Y;
                 if (maxY < innerPanelMinLocation.Y)
                 {
@@ -86,9 +85,9 @@ namespace VoidInventory.UISupport.UIElements
                 _innerPanel.Info.Top.Pixel = -MathHelper.Lerp(innerPanelMinLocation.Y, maxY, verticalWhellValue);
                 Calculation();
             }
-            if (_horizontalScrollbar != null && horizontalWhellValue != _horizontalScrollbar.WheelValue)
+            if (Hscroll != null && horizontalWhellValue != Hscroll.WheelValue)
             {
-                horizontalWhellValue = _horizontalScrollbar.WheelValue;
+                horizontalWhellValue = Hscroll.WheelValue;
                 float maxX = MovableSize.X;/*innerPanelMaxLocation.X - _innerPanel.Info.TotalSize.X;
                 if (maxX < innerPanelMinLocation.X)
                 {

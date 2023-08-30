@@ -7,17 +7,20 @@ namespace VoidInventory.UISupport.UIElements
     public class UIInputBox : BaseUIElement
     {
         private const string cursorSym = "|";
-        public string Text { get => _text; set => _text = value; }
+        public string Text { get; set; }
         public Action OnInputText;
         public int OldTextLength { get; private set; }
         public int Cursor
         {
             get
             {
-                var texts = Text.Split('\n');
+                string[] texts = Text.Split('\n');
                 int r = 0;
                 for (int i = 0; i < _cursorPosition.Y; i++)
+                {
                     r += texts[i].Length + 1;
+                }
+
                 return r + _cursorPosition.X;
             }
             set
@@ -28,10 +31,11 @@ namespace VoidInventory.UISupport.UIElements
                     _cursorPosition = Point.Zero;
                     return;
                 }
-                var texts = Text.Split('\n');
+                string[] texts = Text.Split('\n');
                 _cursorPosition.Y = 0;
                 if (l > 0)
-                    foreach (var t in texts)
+                {
+                    foreach (string t in texts)
                     {
                         if (l > t.Length + 1)
                         {
@@ -39,14 +43,17 @@ namespace VoidInventory.UISupport.UIElements
                             _cursorPosition.Y++;
                         }
                         else
+                        {
                             break;
+                        }
                     }
+                }
+
                 _cursorPosition.X = l;
             }
         }
 
         private readonly float symOffsetX;
-        private string _text;
 
         public Point CursorPosition
         {
@@ -56,34 +63,48 @@ namespace VoidInventory.UISupport.UIElements
             }
             set
             {
-                var v = value;
+                Point v = value;
                 if (v.Y <= 0 && v.X < 0)
                 {
                     _cursorPosition = Point.Zero;
                     return;
                 }
 
-                var texts = Text.Split('\n');
+                string[] texts = Text.Split('\n');
                 while (v.X < 0 && v.Y - 1 >= 0)
                 {
                     v.X += texts[v.Y - 1].Length;
                     v.Y--;
                 }
                 if (v.Y < 0)
+                {
                     v.Y = 0;
+                }
                 //while (v.Y < texts.Length && v.X > texts[v.Y].Length)
                 //{
                 //    v.X -= texts[v.Y].Length;
                 //    v.Y++;
                 //}
                 if (v.Y >= texts.Length)
+                {
                     v.Y = texts.Length - 1;
+                }
+
                 if (v.Y < 0)
+                {
                     v.Y = 0;
+                }
+
                 if (v.X > texts[v.Y].Length)
+                {
                     v.X = texts[v.Y].Length;
+                }
+
                 if (v.X < 0)
+                {
                     v.X = 0;
+                }
+
                 _cursorPosition = v;
             }
         }
@@ -99,14 +120,14 @@ namespace VoidInventory.UISupport.UIElements
 
         public UIInputBox(string text = "", Point cursorPosition = default, Color color = default, Vector2 symSizeOffice = default)
         {
-            _text = text;
+            Text = text;
             _cursorPosition = cursorPosition;
             _color = color;
             _cursorPosition = Point.Zero;
             offset = Vector2.Zero;
             symHitBox = Rectangle.Empty;
             font = FontAssets.MouseText.Value;
-            var c = font.MeasureString(cursorSym[0].ToString()) + symSizeOffice;
+            Vector2 c = font.MeasureString(cursorSym[0].ToString()) + symSizeOffice;
             symHitBox.Width = (int)c.X;
             symHitBox.Height = (int)c.Y;
             symOffsetX = c.X / 2f;
@@ -139,7 +160,9 @@ namespace VoidInventory.UISupport.UIElements
         public override void Update(GameTime gt)
         {
             if (Main.mouseLeft && !ContainsPoint(Main.MouseScreen) && isEnableIME)
+            {
                 isEnableIME = false;
+            }
 
             up.Update();
             down.Update();
@@ -156,12 +179,15 @@ namespace VoidInventory.UISupport.UIElements
                     OldTextLength = Text.Length;
                 }
             }
-            else timer = 14;
+            else
+            {
+                timer = 14;
+            }
         }
 
         public override void DrawChildren(SpriteBatch sb)
         {
-            var texts = Text.Split('\n');
+            string[] texts = Text.Split('\n');
             float offsetY = 0f;
             string text;
             int j = timer % 14;
@@ -171,7 +197,7 @@ namespace VoidInventory.UISupport.UIElements
                 text = texts[i];
                 if (isEnableIME && i == CursorPosition.Y && j <= 8 && j >= 0)
                 {
-                    x = FontAssets.MouseText.Value.MeasureString(text.Substring(0, CursorPosition.X)).X;
+                    x = FontAssets.MouseText.Value.MeasureString(text[..CursorPosition.X]).X;
                     symHitBox.X = (int)(Info.Location.X + x - symOffsetX + offset.X);
                     symHitBox.Y = (int)(Info.Location.Y + offsetY + offset.Y);
                     if (!Info.HitBox.Contains(symHitBox))
@@ -179,13 +205,24 @@ namespace VoidInventory.UISupport.UIElements
                         float hitboxMaxX = Info.HitBox.X + Info.HitBox.Width, symHitboxMaxX = symHitBox.X + symHitBox.Width,
                             hitboxMaxY = Info.HitBox.Y + Info.HitBox.Height, symHitboxMaxY = symHitBox.Y + symHitBox.Height;
                         if (hitboxMaxX < symHitboxMaxX)
+                        {
                             offset.X -= symHitboxMaxX - hitboxMaxX;
+                        }
+
                         if (hitboxMaxY < symHitboxMaxY)
+                        {
                             offset.Y -= symHitboxMaxY - hitboxMaxY;
+                        }
+
                         if (symHitBox.X < Info.HitBox.X)
+                        {
                             offset.X += Info.HitBox.X - symHitBox.X;
+                        }
+
                         if (symHitBox.Y < Info.HitBox.Y)
+                        {
                             offset.Y += Info.HitBox.Y - symHitBox.Y;
+                        }
                     }
                     sb.DrawString(font, cursorSym, Info.Location + new Vector2(x - symOffsetX, offsetY) + offset, _color);
                 }
@@ -197,12 +234,12 @@ namespace VoidInventory.UISupport.UIElements
             {
                 Terraria.GameInput.PlayerInput.WritingText = true;
                 Main.instance.HandleIME();
-                var cp = Cursor;
-                var remaining = _text[cp..];
-                var crop = _text[..cp];
-                var input = Main.GetInputText(crop, true);
-                var p = CursorPosition;
-                _text = input + remaining;
+                int cp = Cursor;
+                string remaining = Text[cp..];
+                string crop = Text[..cp];
+                string input = Main.GetInputText(crop, true);
+                Point p = CursorPosition;
+                Text = input + remaining;
                 p.X += input.Length - crop.Length;
 
                 if (Platform.Get<IImeService>().CandidateCount == 0)
@@ -227,7 +264,9 @@ namespace VoidInventory.UISupport.UIElements
                                 p.X = texts[p.Y].Length;
                             }
                             else
+                            {
                                 p.X--;
+                            }
                         }
                         left.ResetCoolDown();
                     }
@@ -239,24 +278,27 @@ namespace VoidInventory.UISupport.UIElements
                             p.Y++;
                         }
                         else
+                        {
                             p.X++;
+                        }
+
                         right.ResetCoolDown();
                     }
                     if (enter.IsKeyDown())
                     {
                         cp = Cursor;
-                        _text = _text.Insert(cp, "\n");
+                        Text = Text.Insert(cp, "\n");
                         p.X = 0;
                         p.Y++;
                         enter.ResetCoolDown();
                     }
                 }
                 CursorPosition = p;
-                Vector2 size = font.MeasureString(_text);
+                Vector2 size = font.MeasureString(Text);
                 sb.End();
                 sb.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.AnisotropicClamp,
                     DepthStencilState.None, RasterizerState.CullNone, null, Main.UIScaleMatrix);
-                Main.instance.DrawWindowsIMEPanel(HitBox().BottomLeft() + 
+                Main.instance.DrawWindowsIMEPanel(HitBox().BottomLeft() +
                     new Vector2(size.X + 16, p.Y * font.LineSpacing), 0f);
                 sb.End();
                 sb.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.AnisotropicClamp,

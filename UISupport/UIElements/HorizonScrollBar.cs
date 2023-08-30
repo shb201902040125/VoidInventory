@@ -94,7 +94,11 @@ namespace VoidInventory.UISupport.UIElements
                 {
                     WheelValue -= WheelPixel.Value / ViewMovableX * Math.Sign(state.ScrollWheelValue - whell);
                 }
-                else WheelValue -= (state.ScrollWheelValue - whell) / 10f / width * 2;
+                else
+                {
+                    WheelValue -= (state.ScrollWheelValue - whell) / 10f / width * 2;
+                }
+
                 whell = state.ScrollWheelValue;
             }
             if (isMouseDown && mouseX != Main.mouseX)
@@ -114,15 +118,15 @@ namespace VoidInventory.UISupport.UIElements
         public override void DrawSelf(SpriteBatch sb)
         {
             sb.Draw(Tex, new Rectangle(Info.HitBox.X - 12,
-                Info.HitBox.Y + (Info.HitBox.Height - Tex.Height) / 2, 12, Tex.Height),
+                Info.HitBox.Y + ((Info.HitBox.Height - Tex.Height) / 2), 12, Tex.Height),
                 new Rectangle(0, 0, 12, Tex.Height), Color.White * alpha);
 
             sb.Draw(Tex, new Rectangle(Info.HitBox.X,
-                Info.HitBox.Y + (Info.HitBox.Height - Tex.Height) / 2, Info.HitBox.Width, Tex.Height),
+                Info.HitBox.Y + ((Info.HitBox.Height - Tex.Height) / 2), Info.HitBox.Width, Tex.Height),
                 new Rectangle(12, 0, Tex.Width - 24, Tex.Height), Color.White * alpha);
 
             sb.Draw(Tex, new Rectangle(Info.HitBox.X + Info.HitBox.Width,
-                Info.HitBox.Y + (Info.HitBox.Height - Tex.Height) / 2, 12, Tex.Height),
+                Info.HitBox.Y + ((Info.HitBox.Height - Tex.Height) / 2), 12, Tex.Height),
                 new Rectangle(Tex.Width - 12, 0, 12, Tex.Height), Color.White * alpha);
         }
     }

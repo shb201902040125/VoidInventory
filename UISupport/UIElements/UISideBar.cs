@@ -7,8 +7,8 @@
         public bool canOpen = true;
         public const int max = 30;
         public float factor = max;
-        private List<BaseUIElement> list;
-        public List<BaseUIElement> List => list;
+
+        public List<BaseUIElement> List { get; private set; }
         private float? baseX = null, baseY = null, baseL = null, baseT = null;
         public UIImage button;
         /// <param name="dir">0123顺转四向</param>
@@ -55,9 +55,16 @@
             {
                 if (!open)
                 {
-                    if (canOpen) open = true;
+                    if (canOpen)
+                    {
+                        open = true;
+                    }
                 }
-                else open = false;
+                else
+                {
+                    open = false;
+                }
+
                 button.Info.CanBeInteract = false;
             };
             Register(button);
@@ -68,7 +75,11 @@
             float oldf = factor;
             baseL ??= Info.Left.Pixel;
             baseT ??= Info.Top.Pixel;
-            if (!canOpen && open) open = false;
+            if (!canOpen && open)
+            {
+                open = false;
+            }
+
             if (open)
             {
                 if (factor < max)
@@ -78,11 +89,11 @@
                 if (factor == max)
                 {
                     button.Info.CanBeInteract = true;
-                    if (list != null && list.Count > 0)
+                    if (List != null && List.Count > 0)
                     {
-                        for (int i = 0; i < list.Count; i++)
+                        for (int i = 0; i < List.Count; i++)
                         {
-                            list[i].Info.IsVisible = true;
+                            List[i].Info.IsVisible = true;
                         }
                     }
                 }
@@ -97,11 +108,11 @@
                 if (factor == max - 1)
                 {
                     button.Info.CanBeInteract = true;
-                    if (list != null && list.Count > 0)
+                    if (List != null && List.Count > 0)
                     {
-                        for (int i = 0; i < list.Count; i++)
+                        for (int i = 0; i < List.Count; i++)
                         {
-                            list[i].Info.IsVisible = false;
+                            List[i].Info.IsVisible = false;
                         }
                     }
                 }
@@ -138,7 +149,7 @@
             Vector2 size = new(Tex.Width / 6f);
             /*Main.graphics.PreferMultiSampling = true;
             Main.graphics.ApplyChanges();*/
-            var overflowHiddenRasterizerState = new RasterizerState
+            RasterizerState overflowHiddenRasterizerState = new RasterizerState
             {
                 CullMode = CullMode.None,
                 ScissorTestEnable = true
@@ -148,9 +159,9 @@
             //修改光栅化状态
             sb.GraphicsDevice.RasterizerState = overflowHiddenRasterizerState;
             //设定gd是画笔绑定的图像设备
-            var gd = sb.GraphicsDevice;
+            GraphicsDevice gd = sb.GraphicsDevice;
             //储存绘制原剪切矩形
-            var scissorRectangle = gd.ScissorRectangle;
+            Rectangle scissorRectangle = gd.ScissorRectangle;
 
             //此为限定绘制框，需要矩阵修正
             Rectangle drawrec = HiddenOverflowRectangle;
@@ -225,11 +236,11 @@
         }
         public void SetChildrenList(List<BaseUIElement> list)
         {
-            if (this.list != null && this.list.Count > 0)
+            if (List != null && List.Count > 0)
             {
-                for (int i = 0; i < this.list.Count; i++)
+                for (int i = 0; i < List.Count; i++)
                 {
-                    Remove(this.list[i]);
+                    Remove(List[i]);
                 }
             }
             if (list == null || list.Count == 0)
@@ -237,7 +248,7 @@
                 return;
             }
 
-            this.list = list;
+            List = list;
             for (int i = 0; i < list.Count; i++)
             {
                 Register(list[i]);

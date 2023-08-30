@@ -35,7 +35,7 @@ namespace VoidInventory.Content
             RT.Events.OnLeftClick += evt =>
             {
                 Info.IsVisible = false;
-                var rtui = VoidInventory.Ins.uis.Elements[RTUI.NameKey] as RTUI;
+                RTUI rtui = VoidInventory.Ins.uis.Elements[RTUI.NameKey] as RTUI;
                 rtui.Info.IsVisible = true;
                 rtui.bg.SetPos(bg.Info.TotalLocation);
                 rtui.Calculation();
@@ -91,7 +91,7 @@ namespace VoidInventory.Content
             int count = 0;
             foreach (UIItemTex item in leftView.InnerUIE.Cast<UIItemTex>())
             {
-                item.SetPos(count % 6 * 56 + 10, count / 6 * 56 + 10);
+                item.SetPos((count % 6 * 56) + 10, (count / 6 * 56) + 10);
                 count++;
             }
             leftView.Calculation();
@@ -106,7 +106,7 @@ namespace VoidInventory.Content
                 {
                     CanTakeOutSlot = new(x => true),
                 };
-                slot.SetPos(count % 6 * 56 + 10, count / 6 * 56 + 10);
+                slot.SetPos((count % 6 * 56) + 10, (count / 6 * 56) + 10);
                 Item target = item;
                 slot.OnPickItem += uie =>
                 {

@@ -5,8 +5,8 @@ namespace VoidInventory
 {
     public class RecipeTask
     {
-        static Dictionary<Version, Action<RecipeTask, TagCompound>> LoadMethod = new();
-        static HashSet<Condition> ignores = new();
+        private static Dictionary<Version, Action<RecipeTask, TagCompound>> LoadMethod = new();
+        private static HashSet<Condition> ignores = new();
         static RecipeTask()
         {
             FieldInfo[] fs = typeof(Condition).GetFields(BindingFlags.Static | BindingFlags.Public);
@@ -77,7 +77,8 @@ namespace VoidInventory
                     }
             }
         }
-        void TryFinish_0(VInventory inv, bool fake, out bool finishAtLeastOnce, out bool finishAll)
+
+        private void TryFinish_0(VInventory inv, bool fake, out bool finishAtLeastOnce, out bool finishAll)
         {
             if (fake)
             {
@@ -101,17 +102,18 @@ namespace VoidInventory
                 }
             }
         }
-        void TryFinish_1(VInventory inv, bool fake, out bool finishAtLeastOnce, out bool finishAll)
+
+        private void TryFinish_1(VInventory inv, bool fake, out bool finishAtLeastOnce, out bool finishAll)
         {
             int count = 0;
             if (fake)
             {
                 finishAtLeastOnce = CanRecipe(inv);
-                finishAll = inv.items.TryGetValue(RecipeTarget.createItem.type, out var fakeHeld) && (count = fakeHeld.Sum(i => i.stack)) >= CountTarget;
+                finishAll = inv._items.TryGetValue(RecipeTarget.createItem.type, out List<Item> fakeHeld) && (count = fakeHeld.Sum(i => i.stack)) >= CountTarget;
                 return;
             }
             //统计背包里目标产物个数是否达到
-            if (inv.items.TryGetValue(RecipeTarget.createItem.type, out var held) && (count = held.Sum(i => i.stack)) >= CountTarget)
+            if (inv._items.TryGetValue(RecipeTarget.createItem.type, out List<Item> held) && (count = held.Sum(i => i.stack)) >= CountTarget)
             {
                 finishAtLeastOnce = false;
                 finishAll = true;
@@ -130,7 +132,8 @@ namespace VoidInventory
                 }
             }
         }
-        void TryFinish_2(VInventory inv, bool fake, out bool finishAtLeastOnce, out bool finishAll)
+
+        private void TryFinish_2(VInventory inv, bool fake, out bool finishAtLeastOnce, out bool finishAll)
         {
             if (fake)
             {
@@ -145,16 +148,13 @@ namespace VoidInventory
                 finishAtLeastOnce = true;
             }
         }
-        bool DoRecipe(VInventory inv)
+
+        private bool DoRecipe(VInventory inv)
         {
             Player player = Main.LocalPlayer;
             if (RecipeTarget.requiredTile.All(tile =>
             {
-                if (tile != -1)
-                {
-                    return player.adjTile[tile];
-                }
-                return true;
+                return tile == -1 || player.adjTile[tile];
             }))
             {
                 return false;
@@ -169,9 +169,9 @@ namespace VoidInventory
             }
             Dictionary<int, int> used = new();
             List<Dictionary<int, int>> useList = new();
-            foreach (var required in RecipeTarget.requiredItem)
+            foreach (Item required in RecipeTarget.requiredItem)
             {
-                if (HowManyCanUse(required.type, required.stack, out var map, inv, used) >= required.stack)
+                if (HowManyCanUse(required.type, required.stack, out Dictionary<int, int> map, inv, used) >= required.stack)
                 {
                     useList.Add(map);
                 }
@@ -185,16 +185,13 @@ namespace VoidInventory
             inv.Merga(ref item);
             return true;
         }
-        bool CanRecipe(VInventory inv)
+
+        private bool CanRecipe(VInventory inv)
         {
             Player player = Main.LocalPlayer;
             if (RecipeTarget.requiredTile.All(tile =>
             {
-                if (tile != -1)
-                {
-                    return player.adjTile[tile];
-                }
-                return true;
+                return tile == -1 || player.adjTile[tile];
             }))
             {
                 return false;
@@ -209,7 +206,7 @@ namespace VoidInventory
             }
             Dictionary<int, int> used = new();
             List<Dictionary<int, int>> useList = new();
-            foreach (var required in RecipeTarget.requiredItem)
+            foreach (Item required in RecipeTarget.requiredItem)
             {
                 if (HowManyCanUse(required.type, required.stack, out _, inv, used) < required.stack)
                 {
@@ -220,9 +217,9 @@ namespace VoidInventory
         }
         private static void ConsumeItems(Dictionary<int, int> useWhat, VInventory inv)
         {
-            foreach (var usetype in useWhat.Keys)
+            foreach (int usetype in useWhat.Keys)
             {
-                var list = inv.items[usetype];
+                List<Item> list = inv._items[usetype];
                 for (int i = list.Count - 1; i >= 0; i--)
                 {
                     int consume = Math.Min(list[i].stack, useWhat[usetype]);
@@ -240,7 +237,7 @@ namespace VoidInventory
         {
             int number = 0;
             useWhat = new();
-            if (inv.items.TryGetValue(type, out var held))
+            if (inv._items.TryGetValue(type, out List<Item> held))
             {
                 number = held.Sum(i => i.stack);
                 if (used.TryGetValue(type, out int useNumber))
@@ -257,8 +254,8 @@ namespace VoidInventory
             }
             foreach (RecipeGroup group in RecipeGroup.recipeGroups.Values)
             {
-                bool checkSkip = exclude.TryGetValue(group.RegisteredId, out var skip);
-                foreach (int heldType in inv.items.Keys)
+                bool checkSkip = exclude.TryGetValue(group.RegisteredId, out Dictionary<int, bool> skip);
+                foreach (int heldType in inv._items.Keys)
                 {
                     if (heldType == type || (checkSkip && skip.TryGetValue(heldType, out bool skipThis) && skipThis))
                     {
@@ -266,7 +263,7 @@ namespace VoidInventory
                     }
                     if (group.ContainsItem(type) && group.ContainsItem(heldType))
                     {
-                        number = inv.items[heldType].Sum(i => i.stack);
+                        number = inv._items[heldType].Sum(i => i.stack);
                         if (used.TryGetValue(heldType, out int useNumber))
                         {
                             number -= useNumber;
@@ -284,9 +281,10 @@ namespace VoidInventory
         toEnd:;
             return useWhat.Sum(pair => pair.Value);
         }
-        bool CheckTiles(Player player, VInventory inv)
+
+        private bool CheckTiles(Player player, VInventory inv)
         {
-            foreach (var requiredTile in RecipeTarget.requiredTile)
+            foreach (int requiredTile in RecipeTarget.requiredTile)
             {
                 if (!player.adjTile[requiredTile] && !inv.CountTile(1, requiredTile))
                 {
@@ -297,13 +295,10 @@ namespace VoidInventory
         }
         public static bool CheckTile(int tileID, Player player, VInventory inv)
         {
-            if (!player.adjTile[tileID] && !inv.CountTile(1, tileID))
-            {
-                return false;
-            }
-            return true;
+            return player.adjTile[tileID] || inv.CountTile(1, tileID);
         }
-        bool CheckConditions(Player player, VInventory inv)
+
+        private bool CheckConditions(Player player, VInventory inv)
         {
             if (RecipeTarget.Conditions.Contains(Condition.NearWater) && !(player.adjWater || inv.HasWater))
             {
@@ -329,7 +324,7 @@ namespace VoidInventory
             {
                 return false;
             }
-            foreach (var condition in RecipeTarget.Conditions)
+            foreach (Condition condition in RecipeTarget.Conditions)
             {
                 if (ignores.Contains(condition))
                 {
@@ -344,39 +339,13 @@ namespace VoidInventory
         }
         public static bool ChechCondition(Condition c, Player player, VInventory inv)
         {
-            if (c == Condition.NearWater && !(player.adjWater || inv.HasWater))
-            {
-                return false;
-            }
-            if (c == Condition.NearLava && !(player.adjLava || inv.HasLava))
-            {
-                return false;
-            }
-            if (c == Condition.NearHoney && !(player.adjHoney || inv.HasHoney))
-            {
-                return false;
-            }
-            if (c == Condition.NearShimmer && !(player.adjShimmer || inv.HasShimmer))
-            {
-                return false;
-            }
-            if (c == Condition.InSnow && !(player.ZoneSnow || inv.CountTile(1500, TileID.SnowBlock, TileID.IceBlock)))
-            {
-                return false;
-            }
-            if (c == Condition.InGraveyard && !(player.ZoneGraveyard || inv.CountTile(7, TileID.Tombstones)))
-            {
-                return false;
-            }
-            if (ignores.Contains(c))
-            {
-                return true;
-            }
-            if (!c.IsMet())
-            {
-                return false;
-            }
-            return true;
+            return (c != Condition.NearWater || player.adjWater || inv.HasWater)
+&& (c != Condition.NearLava || player.adjLava || inv.HasLava)
+&& (c != Condition.NearHoney || player.adjHoney || inv.HasHoney)
+&& (c != Condition.NearShimmer || player.adjShimmer || inv.HasShimmer)
+&& (c != Condition.InSnow || player.ZoneSnow || inv.CountTile(1500, TileID.SnowBlock, TileID.IceBlock))
+&& (c != Condition.InGraveyard || player.ZoneGraveyard || inv.CountTile(7, TileID.Tombstones))
+&& (ignores.Contains(c) || c.IsMet());
         }
         public void Save(TagCompound tag)
         {
@@ -385,7 +354,7 @@ namespace VoidInventory
         }
         public void Load(TagCompound tag)
         {
-            if (tag.TryGet(nameof(Version), out string version) && Version.TryParse(version, out var v) && LoadMethod.TryGetValue(v, out var loadMethod))
+            if (tag.TryGet(nameof(Version), out string version) && Version.TryParse(version, out Version v) && LoadMethod.TryGetValue(v, out Action<RecipeTask, TagCompound> loadMethod))
             {
                 loadMethod(this, tag);
             }

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Linq;
 
 namespace VoidInventory.Filters
 {
@@ -14,11 +10,9 @@ namespace VoidInventory.Filters
         public override string DescriptionPath => $"VoidInventory.Filter.{nameof(ItemNameFilter)}";
         public override List<Item> FilterItems(ICollection<Item> items)
         {
-            if (string.IsNullOrEmpty(NameFragment))
-            {
-                return new();
-            }
-            return (from item in items where Lang.GetItemName(item.type).Value.Contains(NameFragment) select item).ToList();
+            return string.IsNullOrEmpty(NameFragment)
+                ? new()
+                : (from item in items where Lang.GetItemName(item.type).Value.Contains(NameFragment) select item).ToList();
         }
     }
 }

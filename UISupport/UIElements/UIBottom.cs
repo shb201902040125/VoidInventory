@@ -48,7 +48,7 @@
             base.Update(gt);
             if (CanDrag && startPoint != Main.MouseScreen && dragging)
             {
-                var offestValue = Main.MouseScreen - startPoint;
+                Vector2 offestValue = Main.MouseScreen - startPoint;
                 Info.Left.Pixel += offestValue.X;
                 Info.Top.Pixel += offestValue.Y;
                 startPoint = Main.MouseScreen;

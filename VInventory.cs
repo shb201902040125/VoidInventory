@@ -8,23 +8,24 @@ namespace VoidInventory
 {
     public class VInventory
     {
-        static Dictionary<Version, Action<VInventory, TagCompound>> LoadMethod = new();
+        private static Dictionary<Version, Action<VInventory, TagCompound>> LoadMethod = new();
         internal static Filter<Item, IEnumerable<Item>> currentFilter;
-        internal Dictionary<int, List<Item>> items = new();
+        internal Dictionary<int, List<Item>> _items = new();
         internal List<RecipeTask> recipeTasks = new();
         /// <summary>
         /// 如果此值为True，UI应当不可交互
         /// </summary>
         internal bool Updating;
-        Task mergaTask = null;
-        Queue<Item> mergaQueue = new();
-        Dictionary<int, int> tileMap = new();
+        private Task mergaTask = null;
+        private Queue<Item> mergaQueue = new();
+        private Dictionary<int, int> tileMap = new();
         internal bool HasWater, HasLava, HasHoney, HasShimmer;
         static VInventory()
         {
             LoadMethod[new Version(0, 0, 0, 1)] = Load_0001;
         }
-        static List<Item> SplitItems(Item item)
+
+        private static List<Item> SplitItems(Item item)
         {
             List<Item> list = new();
             while (item.stack > item.maxStack)
@@ -68,14 +69,14 @@ namespace VoidInventory
             }
             int type = item.type;
             VIUI ui = VoidInventory.Ins.uis.Elements[VIUI.NameKey] as VIUI;
-            var uiItems = ui.Items;
-            List<Item> targetItems = items[type];
+            IEnumerable<UIItemTex> uiItems = ui.Items;
+            List<Item> targetItems = _items[type];
             UIItemTex tex;
             if (!uiItems.Any(x => x.ContainedItem.type == type))
             {
                 tex = new(type);
                 int count = uiItems.Count();
-                tex.SetPos(count % 6 * 56 + 10, count / 6 * 56 + 10);
+                tex.SetPos((count % 6 * 56) + 10, (count / 6 * 56) + 10);
                 ui.LoadClickEvent(tex, type, targetItems);
                 ui.leftView.AddElement(tex);
             }
@@ -85,61 +86,41 @@ namespace VoidInventory
                 {
                     targetItems.Add(si);
                 }
-                if (ui.focusType == type) ui.SortRight(targetItems);
+                if (ui.focusType == type)
+                {
+                    ui.SortRight(targetItems);
+                }
             }
             item = new(ItemID.None);
         }
         public void Merga_Inner(Item item, bool ignoreRecipe = false)
         {
             Updating = true;
-            //将物品拆分(防止超出堆叠)
-            List<Item> willPuts = SplitItems(item);
-            if (items.TryGetValue(item.type, out List<Item> held))
+            if (HasItem(item.type, out List<Item> held))
             {
-                //已有该类物品，尝试进行堆入
-                int ptr;
-                foreach (Item putItem in willPuts)
+                foreach (Item container in held)
                 {
-                    //ptr表示正在进行堆入的索引，只能增加
-                    //小于此索引的物品已经堆满，下一个物品堆入时直接跳过，以节省计算
-                    //放在内部而不是foreach外部是因为无法确认ItemLoader.CanStack是否会出现变化
-                    ptr = 0;
-                    while (true)
+                    if (container.stack >= container.maxStack || !ItemLoader.CanStack(item, container))
                     {
-                        //表示索引已经达到队尾，说明已经无处可堆，直接将切分的物品加入队尾
-                        //此切分物品可能经过分堆，不是满堆，因此此时ptr不增加
-                        if (ptr >= held.Count)
-                        {
-                            held.Add(putItem);
-                            break;
-                        }
-                        Item container = held[ptr];
-                        //满堆或无法接受堆叠则后移ptr
-                        if (container.stack == container.maxStack || !ItemLoader.CanStack(container, putItem))
-                        {
-                            ptr++;
-                            continue;
-                        }
-                        //计算移动堆叠数
-                        int move = Math.Min(container.maxStack - container.stack, putItem.stack);
-                        //容器增加堆叠
-                        container.stack += move;
-                        //物品减少堆叠
-                        putItem.stack -= move;
-                        //容器满堆则后移ptr
-                        ptr += container.stack == container.maxStack ? 1 : 0;
-                        //物品堆完，进入下一个要堆的物品
-                        if (putItem.IsAir)
-                        {
-                            break;
-                        }
+                        continue;
                     }
+                    int move = Math.Min(container.maxStack - container.stack, item.stack);
+                    container.stack += move;
+                    item.stack -= move;
+                    if (item.stack == 0)
+                    {
+                        break;
+                    }
+                }
+                if (item.stack > 0)
+                {
+                    held.AddRange(SplitItems(item));
                 }
             }
             else
             {
                 //未有该种物品，直接将拆分结果设为储存
-                items[item.type] = willPuts;
+                _items[item.type] = SplitItems(item);
             }
             //检查合并任务队列是否清空
             if (mergaQueue.TryDequeue(out Item nextItem))
@@ -160,20 +141,21 @@ namespace VoidInventory
                 RefreshUI(/**/);
             }
         }
-        void RefreshUI(Filter<Item, IEnumerable<Item>> filter = null)
+
+        private void RefreshUI(Filter<Item, IEnumerable<Item>> filter = null)
         {
             currentFilter = filter ?? currentFilter;
             List<Item> forUI = new();
             if (currentFilter is null)
             {
-                foreach (var pair in items)
+                foreach (KeyValuePair<int, List<Item>> items in _items)
                 {
-                    forUI.AddRange(pair.Value);
+                    forUI.AddRange(items.Value);
                 }
             }
             else
             {
-                foreach (var pair in items)
+                foreach (KeyValuePair<int, List<Item>> pair in _items)
                 {
                     forUI.AddRange(currentFilter.FilterItems(pair.Value));
                 }
@@ -190,50 +172,47 @@ namespace VoidInventory
         public void MergaAllInInventory()
         {
             Updating = true;
-            var buffer = items;
-            items = new();
-            foreach (var _items in buffer.Values)
+            Dictionary<int, List<Item>> buffer = _items;
+            _items = new();
+            foreach (List<Item> _items in buffer.Values)
             {
-                foreach (var item in _items)
+                foreach (Item item in _items)
                 {
-                    if (items.TryGetValue(item.type, out List<Item> held))
+                    if (HasItem(item.type, out List<Item> held))
                     {
-                        int ptr = 0;
-                        while (true)
+                        foreach (Item container in held)
                         {
-                            if (ptr >= held.Count)
+                            if (container.stack >= container.maxStack || !ItemLoader.CanStack(item, container))
                             {
-                                held.Add(item);
-                                break;
-                            }
-                            Item container = held[ptr];
-                            if (container.stack == container.maxStack || !ItemLoader.CanStack(container, item))
-                            {
-                                ptr++;
                                 continue;
                             }
                             int move = Math.Min(container.maxStack - container.stack, item.stack);
                             container.stack += move;
                             item.stack -= move;
-                            ptr += container.stack == container.maxStack ? 1 : 0;
-                            if (item.IsAir)
+                            if (item.stack == 0)
                             {
                                 break;
                             }
                         }
+                        if (item.stack > 0)
+                        {
+                            held.AddRange(SplitItems(item));
+                        }
                     }
                     else
                     {
-                        items[item.type] = new() { item };
+                        this._items[item.type] = new() { item };
                     }
                 }
             }
+            _items.RemoveAll(type => !HasItem(type, out _));
             Updating = false;
         }
+
         /// <summary>
         /// 进行合成尝试
         /// </summary>
-        void TryFinishRecipeTasks()
+        private void TryFinishRecipeTasks()
         {
             //刷新物块映射
             MapTileAsAdj();
@@ -247,25 +226,25 @@ namespace VoidInventory
                 }
             }
         }
+
         /// <summary>
         /// 刷新物块映射
         /// </summary>
-        void MapTileAsAdj()
+        private void MapTileAsAdj()
         {
             tileMap.Clear();
-            foreach (var pair in items.Values)
+            foreach (List<Item> items in _items.Values)
             {
-                if (pair[0].createTile == -1)
+                if (!items.Any() || items[0].createTile == -1)
                 {
                     continue;
                 }
-                tileMap[pair[0].createTile] = pair.Sum(i => i.stack);
+                tileMap[items[0].createTile] = items.Sum(i => i.stack);
             }
-            tileMap.Remove(-1);
-            HasWater = items.ContainsKey(ItemID.WaterBucket) || items.ContainsKey(ItemID.BottomlessBucket);
-            HasLava = items.ContainsKey(ItemID.LavaBucket) || items.ContainsKey(ItemID.BottomlessLavaBucket);
-            HasHoney = items.ContainsKey(ItemID.HoneyBucket) || items.ContainsKey(ItemID.BottomlessHoneyBucket);
-            HasShimmer = items.ContainsKey(ItemID.BottomlessShimmerBucket);
+            HasWater = _items.ContainsKey(ItemID.WaterBucket) || _items.ContainsKey(ItemID.BottomlessBucket);
+            HasLava = _items.ContainsKey(ItemID.LavaBucket) || _items.ContainsKey(ItemID.BottomlessLavaBucket);
+            HasHoney = _items.ContainsKey(ItemID.HoneyBucket) || _items.ContainsKey(ItemID.BottomlessHoneyBucket);
+            HasShimmer = _items.ContainsKey(ItemID.BottomlessShimmerBucket);
         }
         /// <summary>
         /// 返回是否持有指定类型的物品，并给出物品列表
@@ -275,11 +254,7 @@ namespace VoidInventory
         /// <returns></returns>
         public bool HasItem(int type, out List<Item> heldItems)
         {
-            if (items.TryGetValue(type, out heldItems))
-            {
-                return true;
-            }
-            return false;
+            return _items.TryGetValue(type, out heldItems) && heldItems.Sum(i => i.stack) > 0;
         }
         /// <summary>
         /// 从库存中提出指定类型的物品指定个数，返回是否完全提出成功。并给出提出数和提出物品列表
@@ -293,7 +268,7 @@ namespace VoidInventory
         {
             outItems = new();
             int require = stackRequire;
-            if (items.TryGetValue(type, out var held))
+            if (HasItem(type, out List<Item> held))
             {
                 for (int i = held.Count - 1; i >= 0; i--)
                 {
@@ -324,28 +299,28 @@ namespace VoidInventory
             tag[nameof(Version)] = "0.0.0.1";
             TagCompound sub = new();
             List<List<Item>> _items = new();
-            foreach (var pair in items)
+            foreach (KeyValuePair<int, List<Item>> pair in this._items)
             {
                 _items.Add(pair.Value);
             }
-            sub[nameof(items)] = _items;
+            sub[nameof(VInventory._items)] = _items;
             tag[nameof(sub)] = sub;
         }
         internal void Load(TagCompound tag)
         {
-            if (tag.TryGet(nameof(Version), out string version) && Version.TryParse(version, out var v) && LoadMethod.TryGetValue(v, out var loadMethod))
+            if (tag.TryGet(nameof(Version), out string version) && Version.TryParse(version, out Version v) && LoadMethod.TryGetValue(v, out Action<VInventory, TagCompound> loadMethod))
             {
                 loadMethod(this, tag);
             }
         }
-        static void Load_0001(VInventory inventory, TagCompound tag)
+
+        private static void Load_0001(VInventory inventory, TagCompound tag)
         {
-            List<List<Item>> _items;
-            if (!tag.TryGet("sub", out TagCompound sub) || !sub.TryGet(nameof(items), out _items))
+            if (!tag.TryGet("sub", out TagCompound sub) || !sub.TryGet(nameof(VInventory._items), out List<List<Item>> _items))
             {
                 return;
             }
-            foreach (var list in _items)
+            foreach (List<Item> list in _items)
             {
                 list.ForEach(i => inventory.Merga_Inner(i, true));
             }
@@ -353,9 +328,9 @@ namespace VoidInventory
         }
         internal bool CountTile(int countNeed, params int[] tileNeeds)
         {
-            foreach (var need in tileNeeds)
+            foreach (int need in tileNeeds)
             {
-                if (tileMap.TryGetValue(need, out var count))
+                if (tileMap.TryGetValue(need, out int count))
                 {
                     countNeed -= count;
                     if (countNeed <= 0)

@@ -1,4 +1,3 @@
-using Steamworks;
 using VoidInventory.UISupport;
 
 namespace VoidInventory

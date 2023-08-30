@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Linq;
 
 namespace VoidInventory.Orders
 {
@@ -10,7 +6,7 @@ namespace VoidInventory.Orders
     {
         public override void OrderItems(ref List<Item> items)
         {
-            items= items.OrderBy(item => item.type).ToList();
+            items = items.OrderBy(item => item.type).ToList();
         }
     }
 }

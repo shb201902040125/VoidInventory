@@ -1,6 +1,4 @@
-﻿using ReLogic.Graphics;
-
-namespace VoidInventory.UISupport.UIElements
+﻿namespace VoidInventory.UISupport.UIElements
 {
     public class UIFuncText : BaseUIElement
     {
@@ -40,7 +38,7 @@ namespace VoidInventory.UISupport.UIElements
             }
             else if (Style == 2)
             {
-                DrawStr(sb, font, t, Pos() + offY + Vector2.UnitY * Height / 2, new Vector2(0, size.Y / 2f), scale);
+                DrawStr(sb, font, t, Pos() + offY + (Vector2.UnitY * Height / 2), new Vector2(0, size.Y / 2f), scale);
             }
         }
     }

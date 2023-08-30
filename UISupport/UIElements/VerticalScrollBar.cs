@@ -58,7 +58,10 @@ namespace VoidInventory.UISupport.UIElements
             base.LoadEvents();
             Events.OnLeftDown += element =>
             {
-                if (!isMouseDown) isMouseDown = true;
+                if (!isMouseDown)
+                {
+                    isMouseDown = true;
+                }
             };
             Events.OnLeftUp += element =>
             {
@@ -109,7 +112,11 @@ namespace VoidInventory.UISupport.UIElements
                 {
                     WheelValue -= WheelPixel.Value / ViewMovableY * Math.Sign(state.ScrollWheelValue - whell);
                 }
-                else WheelValue -= (state.ScrollWheelValue - whell) / 6f / height;
+                else
+                {
+                    WheelValue -= (state.ScrollWheelValue - whell) / 6f / height;
+                }
+
                 whell = state.ScrollWheelValue;
             }
             if (isMouseDown && mouseY != Main.mouseY)
@@ -119,7 +126,7 @@ namespace VoidInventory.UISupport.UIElements
             }
 
             inner.Info.Top.Pixel = Math.Max(0, WheelValue * height);
-            RealWheelValue = Math.Clamp(WaitToWhellValue - RealWheelValue, -1, 1) / 6f + RealWheelValue;
+            RealWheelValue = (Math.Clamp(WaitToWhellValue - RealWheelValue, -1, 1) / 6f) + RealWheelValue;
             if ((int)(WaitToWhellValue * 100) / 100f != (int)(RealWheelValue * 100) / 100f)
             {
                 Calculation();
@@ -128,15 +135,15 @@ namespace VoidInventory.UISupport.UIElements
 
         public override void DrawSelf(SpriteBatch sb)
         {
-            sb.Draw(Tex, new Rectangle(Info.HitBox.X + (Info.HitBox.Width - Tex.Width) / 2,
+            sb.Draw(Tex, new Rectangle(Info.HitBox.X + ((Info.HitBox.Width - Tex.Width) / 2),
                 Info.HitBox.Y - 12, Tex.Width, 12),
                 new Rectangle(0, 0, Tex.Width, 12), Color.White * alpha);
 
-            sb.Draw(Tex, new Rectangle(Info.HitBox.X + (Info.HitBox.Width - Tex.Width) / 2,
+            sb.Draw(Tex, new Rectangle(Info.HitBox.X + ((Info.HitBox.Width - Tex.Width) / 2),
                 Info.HitBox.Y, Tex.Width, Info.HitBox.Height),
                 new Rectangle(0, 12, Tex.Width, Tex.Height - 24), Color.White * alpha);
 
-            sb.Draw(Tex, new Rectangle(Info.HitBox.X + (Info.HitBox.Width - Tex.Width) / 2,
+            sb.Draw(Tex, new Rectangle(Info.HitBox.X + ((Info.HitBox.Width - Tex.Width) / 2),
                 Info.HitBox.Y + Info.HitBox.Height, Tex.Width, 12),
                 new Rectangle(0, Tex.Height - 12, Tex.Width, 12), Color.White * alpha);
         }

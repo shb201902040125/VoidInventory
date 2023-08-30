@@ -29,7 +29,7 @@
                 Main.instance.LoadItem(itemid);
                 Rectangle frame = Main.itemAnimations[itemid] != null ? Main.itemAnimations[itemid].GetFrame(TextureAssets.Item[itemid].Value) : Item.GetDrawHitbox(itemid, null);
                 //绘制物品贴图
-                var center = Center();
+                Vector2 center = Center();
                 SimpleDraw(sb, TextureAssets.Item[itemid].Value, center, frame, frame.Size() / 2f, scale * frame.AutoScale(24));
                 /* sb.Draw(TextureAssets.Item[itemid].Value, new Vector2(HitBox().X + HitBox().Width / 2,
                      HitBox().Y + HitBox().Height / 2) - (new Vector2(frame.Width, frame.Height) / 2f * scale),

@@ -39,7 +39,7 @@
                     origin = TextSize / 2f;
                     break;
                 case 2:
-                    drawPos = hitbox.TopLeft() + Vector2.UnitY * hitbox.Height / 2f;
+                    drawPos = hitbox.TopLeft() + (Vector2.UnitY * hitbox.Height / 2f);
                     origin = new Vector2(0, TextSize.Y / 2f);
                     break;
             }
@@ -49,7 +49,10 @@
         {
             this.text = text;
             TextSize = font.MeasureString(text);
-            if (resetSize) SetSize(TextSize);
+            if (resetSize)
+            {
+                SetSize(TextSize);
+            }
         }
     }
 }
