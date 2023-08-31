@@ -13,6 +13,7 @@ namespace VoidInventory
         internal static Filter<Item, IEnumerable<Item>> currentFilter;
         internal Dictionary<int, List<Item>> _items = new();
         internal List<RecipeTask> recipeTasks = new();
+        internal int tryDelay;
         /// <summary>
         /// 如果此值为True，UI应当不可交互
         /// </summary>
@@ -46,6 +47,15 @@ namespace VoidInventory
             {
                 mergaTask = new(() => Merga_Inner(mergaQueue.Dequeue()));
                 mergaTask.Start();
+            }
+            else
+            {
+                tryDelay++;
+                if (tryDelay == 300)
+                {
+                    TryFinishRecipeTasks();
+                    tryDelay = 0;
+                }
             }
         }
         /// <summary>
@@ -112,6 +122,7 @@ namespace VoidInventory
                 }
                 //清除合并线程
                 mergaTask = null;
+                tryDelay = 0;
                 //进行刷新UI的回调
                 RefreshUI(item);
             }
