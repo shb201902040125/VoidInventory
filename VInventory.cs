@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
+using Terraria;
 using Terraria.ModLoader.IO;
 using VoidInventory.Content;
 using VoidInventory.Filters;
@@ -43,7 +44,6 @@ namespace VoidInventory
         {
             if (mergaTask is null && mergaQueue.Count > 0)
             {
-                Main.NewText("Task Start");
                 mergaTask = new(() => Merga_Inner(mergaQueue.Dequeue()));
                 mergaTask.Start();
             }
@@ -57,7 +57,6 @@ namespace VoidInventory
             Item toInner = item;
             if (mergaTask is null)
             {
-                Main.NewText("Task Start");
                 //未有合并线程，创建并启动合并线程
                 mergaTask = new(() => Merga_Inner(toInner));
                 mergaTask.Start();
@@ -66,30 +65,6 @@ namespace VoidInventory
             {
                 //已有合并线程，添加到任务队列
                 mergaQueue.Enqueue(toInner);
-            }
-            int type = item.type;
-            VIUI ui = VoidInventory.Ins.uis.Elements[VIUI.NameKey] as VIUI;
-            IEnumerable<UIItemTex> uiItems = ui.Items;
-            List<Item> targetItems = _items[type];
-            UIItemTex tex;
-            if (!uiItems.Any(x => x.ContainedItem.type == type))
-            {
-                tex = new(type);
-                int count = uiItems.Count();
-                tex.SetPos((count % 6 * 56) + 10, (count / 6 * 56) + 10);
-                ui.LoadClickEvent(tex, type, targetItems);
-                ui.leftView.AddElement(tex);
-            }
-            else
-            {
-                foreach (Item si in SplitItems(item))
-                {
-                    targetItems.Add(si);
-                }
-                if (ui.focusType == type)
-                {
-                    ui.SortRight(targetItems);
-                }
             }
             item = new(ItemID.None);
         }
@@ -138,11 +113,11 @@ namespace VoidInventory
                 //清除合并线程
                 mergaTask = null;
                 //进行刷新UI的回调
-                RefreshUI(/**/);
+                RefreshUI(item);
             }
         }
 
-        private void RefreshUI(Filter<Item, IEnumerable<Item>> filter = null)
+        private void RefreshUI(Item lastItem=null,Filter<Item, IEnumerable<Item>> filter = null)
         {
             currentFilter = filter ?? currentFilter;
             List<Item> forUI = new();
@@ -161,8 +136,24 @@ namespace VoidInventory
                 }
             }
             //用forUI刷新UI界面
-            // TODO
-
+            VIUI ui = VoidInventory.Ins.uis.Elements[VIUI.NameKey] as VIUI;
+            UIItemTex tex;
+            ui.leftView.ClearAllElements();
+            var keys = _items.Keys.ToList();
+            keys.Sort();
+            int count = 0;
+            foreach (var key in keys)
+            {
+                tex = new(key);
+                tex.SetPos((count % 6 * 56) + 10, (count / 6 * 56) + 10);
+                ui.LoadClickEvent(tex, key, _items[key]);
+                ui.leftView.AddElement(tex);
+                count++;
+            }
+            if(ui.focusType==lastItem.type)
+            {
+                ui.SortRight(_items[ui.focusType]);
+            }
             Updating = false;
         }
         /// <summary>
@@ -219,7 +210,11 @@ namespace VoidInventory
             foreach (RecipeTask task in recipeTasks)
             {
                 //如果完成了任意一次合成，说明背包物品发生变化，需要重新刷新物块映射并尝试合成
-                task.TryFinish(this, false, out bool reTry, out _);
+                task.TryFinish(this, false, out bool reTry, out bool report);
+                if (task.TaskState == 0 && report)
+                {
+                    Main.NewText(task.GetReportMessage());
+                }
                 if (reTry)
                 {
                     TryFinishRecipeTasks();
@@ -297,34 +292,13 @@ namespace VoidInventory
         internal void Save(TagCompound tag)
         {
             tag[nameof(Version)] = "0.0.0.1";
-            TagCompound sub = new();
-            List<List<Item>> _items = new();
-            foreach (KeyValuePair<int, List<Item>> pair in this._items)
-            {
-                _items.Add(pair.Value);
-            }
-            sub[nameof(VInventory._items)] = _items;
-            tag[nameof(sub)] = sub;
         }
         internal void Load(TagCompound tag)
         {
-            if (tag.TryGet(nameof(Version), out string version) && Version.TryParse(version, out Version v) && LoadMethod.TryGetValue(v, out Action<VInventory, TagCompound> loadMethod))
-            {
-                loadMethod(this, tag);
-            }
         }
 
         private static void Load_0001(VInventory inventory, TagCompound tag)
         {
-            if (!tag.TryGet("sub", out TagCompound sub) || !sub.TryGet(nameof(VInventory._items), out List<List<Item>> _items))
-            {
-                return;
-            }
-            foreach (List<Item> list in _items)
-            {
-                list.ForEach(i => inventory.Merga_Inner(i, true));
-            }
-            inventory.MergaAllInInventory();
         }
         internal bool CountTile(int countNeed, params int[] tileNeeds)
         {

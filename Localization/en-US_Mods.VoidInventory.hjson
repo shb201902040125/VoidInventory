@@ -13,3 +13,4 @@ Condition: Condition
 ToLock: Unprotected, click to lock
 Locked: Protected, lick to unlock
 Protect: If locked, this item will not be consumed as a material
+RecipeTaskFinish: Recipe task completed, target item - {0}
