@@ -191,7 +191,6 @@ namespace VoidInventory.Content
                 UIImage line;
                 if (recipe.requiredItem.Any())
                 {
-
                     y += item.Height + 20;
 
                     UIText material = new(Language.GetTextValue("LegacyTooltip.36"), drawStyle: 0);
@@ -205,35 +204,11 @@ namespace VoidInventory.Content
                     line.SetPos(x, y - 7);
                     ui.detail.AddElement(line);
 
-                    List<(int groupID, int stack)> groups = new();
-                    int count = 1, len = recipe.requiredItem.Count;
-                    foreach (Item requiredItem in recipe.requiredItem)
+                    List<Item> requiredItems = FilterRecipeGroup(recipe, out List<(int groupID, int stack)> groups);
+
+                    int count = 1, len = requiredItems.Count;
+                    foreach (Item requiredItem in requiredItems)
                     {
-                        bool isGroupItem = false;
-                        foreach (int acceptedGroups in recipe.acceptedGroups)
-                        {
-                            bool cotains = false;
-                            RecipeGroup group = RecipeGroup.recipeGroups[acceptedGroups];
-                            foreach (int ValidItem in group.ValidItems)
-                            {
-                                if (requiredItem.type == ValidItem)
-                                {
-                                    cotains = true;
-                                    groups.Add((acceptedGroups, requiredItem.stack));
-                                    len--;
-                                    break;
-                                }
-                            }
-                            if (cotains)
-                            {
-                                isGroupItem = true;
-                                break;
-                            }
-                        }
-                        if (isGroupItem)
-                        {
-                            continue;
-                        }
                         UIItemSlot ingredient = new(requiredItem);
                         ingredient.SetPos(x, y);
                         ingredient.IgnoreOne = true;
@@ -265,6 +240,7 @@ namespace VoidInventory.Content
 
                         count++;
                     }
+
                     x = 20;
                     if (groups.Any())
                     {
@@ -410,6 +386,38 @@ namespace VoidInventory.Content
                 }
             }
             ui.dbg.Calculation();
+        }
+        private static bool IsRecipeGroup(Item item, int start, List<int> acceptedGroups, out int groupID)
+        {
+            groupID = -1;
+            for (int i = start; i < acceptedGroups.Count; i++)
+            {
+                groupID = acceptedGroups[i];
+                if (item.type == RecipeGroup.recipeGroups[groupID].IconicItemId)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+        private static List<Item> FilterRecipeGroup(Recipe recipe, out List<(int, int)> groups)
+        {
+            List<Item> filterRecipeGroup = new();
+            groups = new();
+            int index = 0;
+            foreach (Item item in recipe.requiredItem)
+            {
+                if (IsRecipeGroup(item, index, recipe.acceptedGroups, out int groupID))
+                {
+                    groups.Add((groupID, item.stack));
+                    index++;
+                }
+                else
+                {
+                    filterRecipeGroup.Add(item);
+                }
+            }
+            return filterRecipeGroup;
         }
     }
 }
