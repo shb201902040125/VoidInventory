@@ -29,19 +29,6 @@ namespace VoidInventory
                 VoidInventory.Ins.uis.Calculation();
             }
             VoidInventory.Ins.uis.Update(gt);
-            //if (Keybind.JustPressed)
-            //{
-            //    RTUI ui = VoidInventory.Ins.uis.Elements[RTUI.NameKey] as RTUI;
-            //    if (!ui.firstLoad)
-            //    {
-            //        ui.OnInitialization();
-            //        ui.firstLoad = true;
-            //    }
-            //    ContainerElement VIui = VoidInventory.Ins.uis.Elements[VIUI.NameKey];
-            //    //ui.ChangeItem(ItemID.RottenChunk);
-            //    ref bool visible = ref VIui.Info.IsVisible;
-            //    visible = !visible;
-            //}
         }
         public override void PreSaveAndQuit()
         {
