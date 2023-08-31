@@ -1,4 +1,7 @@
-﻿using System.Linq;
+﻿using System.IO;
+using System.Linq;
+using System.Text;
+using Terraria.Localization;
 using Terraria.ModLoader.IO;
 
 namespace VoidInventory
@@ -19,7 +22,7 @@ namespace VoidInventory
             }
             LoadMethod[new Version(0, 0, 0, 1)] = Load_0001;
         }
-        public Recipe RecipeTarget { get; }
+        public Recipe RecipeTarget { get; private set; }
         public bool Stopping { get; internal set; }
         /// <summary>
         /// 合成任务状态
@@ -87,7 +90,7 @@ namespace VoidInventory
                 return;
             }
             finishAtLeastOnce = false;
-            finishAll = true;
+            finishAll = false;
             if (CountTarget > 0)
             {
                 //合成成功，完成一次标记为true，全部完成判断次数需求是否到0
@@ -152,13 +155,6 @@ namespace VoidInventory
         private bool DoRecipe(VInventory inv)
         {
             Player player = Main.LocalPlayer;
-            if (RecipeTarget.requiredTile.All(tile =>
-            {
-                return tile == -1 || player.adjTile[tile];
-            }))
-            {
-                return false;
-            }
             if (!CheckTiles(player, inv))
             {
                 return false;
@@ -189,13 +185,6 @@ namespace VoidInventory
         private bool CanRecipe(VInventory inv)
         {
             Player player = Main.LocalPlayer;
-            if (RecipeTarget.requiredTile.All(tile =>
-            {
-                return tile == -1 || player.adjTile[tile];
-            }))
-            {
-                return false;
-            }
             if (!CheckTiles(player, inv))
             {
                 return false;
@@ -205,7 +194,6 @@ namespace VoidInventory
                 return false;
             }
             Dictionary<int, int> used = new();
-            List<Dictionary<int, int>> useList = new();
             foreach (Item required in RecipeTarget.requiredItem)
             {
                 if (HowManyCanUse(required.type, required.stack, out _, inv, used) < required.stack)
@@ -286,6 +274,10 @@ namespace VoidInventory
         {
             foreach (int requiredTile in RecipeTarget.requiredTile)
             {
+                if (requiredTile == -1)
+                {
+                    continue;
+                }
                 if (!player.adjTile[requiredTile] && !inv.CountTile(1, requiredTile))
                 {
                     return false;
@@ -337,31 +329,19 @@ namespace VoidInventory
             }
             return true;
         }
-        public static bool ChechCondition(Condition c, Player player, VInventory inv)
-        {
-            return (c != Condition.NearWater || player.adjWater || inv.HasWater)
-&& (c != Condition.NearLava || player.adjLava || inv.HasLava)
-&& (c != Condition.NearHoney || player.adjHoney || inv.HasHoney)
-&& (c != Condition.NearShimmer || player.adjShimmer || inv.HasShimmer)
-&& (c != Condition.InSnow || player.ZoneSnow || inv.CountTile(1500, TileID.SnowBlock, TileID.IceBlock))
-&& (c != Condition.InGraveyard || player.ZoneGraveyard || inv.CountTile(7, TileID.Tombstones))
-&& (ignores.Contains(c) || c.IsMet());
-        }
         public void Save(TagCompound tag)
         {
             tag[nameof(Version)] = "0.0.0.1";
-            //TODO
         }
         public void Load(TagCompound tag)
         {
-            if (tag.TryGet(nameof(Version), out string version) && Version.TryParse(version, out Version v) && LoadMethod.TryGetValue(v, out Action<RecipeTask, TagCompound> loadMethod))
-            {
-                loadMethod(this, tag);
-            }
         }
         public static void Load_0001(RecipeTask task, TagCompound tag)
         {
-            //TODO
+        }
+        internal string GetReportMessage()
+        {
+            return string.Format(GTV($"RecipeTaskFinish"), Lang.GetItemNameValue(RecipeTarget.createItem.type));
         }
     }
 }
