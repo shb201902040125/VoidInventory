@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using Terraria.Localization;
@@ -8,7 +9,6 @@ namespace VoidInventory
 {
     public class RecipeTask
     {
-        private static Dictionary<Version, Action<RecipeTask, TagCompound>> LoadMethod = new();
         private static HashSet<Condition> ignores = new();
         static RecipeTask()
         {
@@ -20,7 +20,6 @@ namespace VoidInventory
                     ignores.Add((Condition)fi.GetValue(null));
                 }
             }
-            LoadMethod[new Version(0, 0, 0, 1)] = Load_0001;
         }
         public Recipe RecipeTarget { get; private set; }
         public bool Stopping { get; internal set; }
@@ -329,15 +328,121 @@ namespace VoidInventory
             }
             return true;
         }
-        public void Save(TagCompound tag)
+        internal static void Save(TagCompound tag, List<RecipeTask> tasks)
         {
-            tag[nameof(Version)] = "0.0.0.1";
+            using MemoryStream stream = new();
+            using BinaryWriter writer = new(stream);
+            writer.Write("0.0.0.1");
+            writer.Write(tasks.Count);
+            tasks.ForEach(task =>
+            {
+                writer.Write(task.RecipeTarget.GetCheckCode());
+                writer.Write(task.TaskState);
+                writer.Write(task.CountTarget);
+                writer.Write(task.Stopping);
+                writer.Write(task.exclude.Count);
+                foreach(var pair in task.exclude)
+                {
+                    writer.Write(RecipeGroup.recipeGroups[pair.Key].GetText());
+                    writer.Write(pair.Value.Count);
+                    foreach(var subpair in pair.Value)
+                    {
+                        writer.Write(ItemLoader.GetItem(subpair.Key)?.FullName ?? (subpair.Key.ToString()));
+                        writer.Write(subpair.Value);
+                    }
+                }
+            });
+            tag["RTS"] = stream.ToArray();
         }
-        public void Load(TagCompound tag)
+        public static List<RecipeTask> Load(TagCompound tag)
         {
+            if(tag.TryGet<byte[]>("RTS",out var data))
+            {
+                Dictionary<string, Recipe> rs = new();
+                Dictionary<string, int> rgs = new();
+                foreach (var r in Main.recipe[0..Recipe.maxRecipes])
+                {
+                    rs[r.GetCheckCode()] = r;
+                }
+                foreach (var rg in RecipeGroup.recipeGroups) 
+                {
+                    rgs[rg.Value.GetText()] = rg.Key;
+                }
+                using MemoryStream stream = new(data);
+                using BinaryReader reader = new(stream);
+                string version = reader.ReadString();
+                return version switch
+                {
+                    "0.0.0.1" => Load_0001(reader,rs,rgs),
+                    _ => new(),
+                };
+            }
+            return new();
         }
-        public static void Load_0001(RecipeTask task, TagCompound tag)
+        public static List<RecipeTask> Load_0001(BinaryReader reader,Dictionary<string,Recipe> recipeMap,Dictionary<string,int> recipeGroupMap)
         {
+            List<RecipeTask> result = new();
+            int count = reader.ReadInt32();
+            for (int i = 0; i < count; i++)
+            {
+                string checkcode = reader.ReadString();
+                int state = reader.ReadInt32();
+                int countTarget = reader.ReadInt32();
+                bool stoppint = reader.ReadBoolean();
+                int excludeCount = reader.ReadInt32();
+                Dictionary<int,Dictionary<int, bool>> exclude = new();
+                for (int j = 0; j < excludeCount; j++)
+                {
+                    string name = reader.ReadString();
+                    int ecount = reader.ReadInt32();
+                    Dictionary<int, bool> sube = new();
+                    for (int k = 0; k < ecount; k++)
+                    {
+                        string item = reader.ReadString();
+                        if (!int.TryParse(item, out int type))
+                        {
+                            if (ModContent.TryFind(item, out ModItem modItem))
+                            {
+                                type = modItem.Type;
+                            }
+                            else
+                            {
+                                type = -1;
+                            }
+                        }
+                        sube[type] = reader.ReadBoolean();
+                    }
+                    if (recipeGroupMap.TryGetValue(name, out int id) && !sube.ContainsKey(-1))
+                    {
+                        exclude[id] = sube;
+                    }
+                }
+                if (recipeMap.TryGetValue(checkcode, out Recipe targetRecipe))
+                {
+                    RecipeTask task = new(targetRecipe)
+                    {
+                        TaskState = state,
+                        CountTarget = countTarget,
+                        Stopping = stoppint,
+                        exclude = exclude
+                    };
+                    foreach(var trg in task.RecipeTarget.acceptedGroups)
+                    {
+                        if(!exclude.ContainsKey(trg))
+                        {
+                            RecipeGroup addExcludeRG = RecipeGroup.recipeGroups[trg];
+                            Dictionary<int, bool> addExclude = new();
+                            foreach(var type in addExcludeRG.ValidItems)
+                            {
+                                addExclude[type] = false;
+                            }
+                            exclude[trg] = addExclude;
+                        }
+                    }
+                    result.Add(task);
+                }
+            }
+            return result;
         }
         internal string GetReportMessage()
         {

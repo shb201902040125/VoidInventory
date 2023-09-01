@@ -9,7 +9,6 @@ namespace VoidInventory
 {
     public class VInventory
     {
-        private static Dictionary<Version, Action<VInventory, TagCompound>> LoadMethod = new();
         internal static Filter<Item, IEnumerable<Item>> currentFilter;
         internal Dictionary<int, List<Item>> _items = new();
         internal List<RecipeTask> recipeTasks = new();
@@ -24,7 +23,6 @@ namespace VoidInventory
         internal bool HasWater, HasLava, HasHoney, HasShimmer;
         static VInventory()
         {
-            LoadMethod[new Version(0, 0, 0, 1)] = Load_0001;
         }
 
         private static List<Item> SplitItems(Item item)
@@ -302,14 +300,61 @@ namespace VoidInventory
         }
         internal void Save(TagCompound tag)
         {
-            tag[nameof(Version)] = "0.0.0.1";
+            tag["version"] = "0.0.0.1";
+            List<Item> items = new();
+            foreach (var pair in _items)
+            {
+                if (pair.Value.Sum(i => i.stack) < 1)
+                {
+                    continue;
+                }
+                items.AddRange(pair.Value);
+            }
+            tag[nameof(_items)] = items;
+            TagCompound taskTag = new();
+            RecipeTask.Save(taskTag, recipeTasks);
+            tag[nameof(recipeTasks)] = taskTag;
         }
         internal void Load(TagCompound tag)
         {
+            if(tag.TryGet("version",out string version))
+            {
+                switch (version)
+                {
+                    case "0.0.0.1":
+                        {
+                            Load_0001(tag);
+                            break;
+                        }
+                }
+            }
+            else
+            {
+                VoidInventory.Ins.Logger.Debug("Lost Data:VInventory.Load");
+            }
         }
-
-        private static void Load_0001(VInventory inventory, TagCompound tag)
+        private void Load_0001(TagCompound tag)
         {
+            _items.Clear();
+            if(tag.TryGet(nameof(_items),out List<Item> items))
+            {
+                foreach (var item in items)
+                {
+                    if(_items.TryGetValue(item.type,out List<Item> items2))
+                    {
+                        items2.Add(item);
+                    }
+                    else
+                    {
+                        _items[item.type] = new() { item };
+                    }
+                }
+                MergaAllInInventory();
+            }
+            if (tag.TryGet(nameof(recipeTasks),out TagCompound tasktag))
+            {
+                recipeTasks = RecipeTask.Load(tasktag);
+            }
         }
         internal bool CountTile(int countNeed, params int[] tileNeeds)
         {

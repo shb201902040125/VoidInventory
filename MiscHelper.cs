@@ -11,6 +11,8 @@ global using Terraria.ModLoader;
 global using Terraria.UI.Chat;
 global using VoidInventory.UISupport.UIElements;
 global using static VoidInventory.MiscHelper;
+using System.Security.Cryptography;
+using System.Text;
 using Terraria.Localization;
 using VoidInventory.Content;
 
@@ -20,6 +22,7 @@ namespace VoidInventory
     {
         public static string GTV(string key) => Language.GetTextValue("Mods.VoidInventory." + key);
         public const string Asset = "VoidInventory/UISupport/Asset/";
+        static MD5 md5 = MD5.Create();
         public static Rectangle NewRec(Vector2 start, Vector2 size) => NewRec(start.ToPoint(), size.ToPoint());
         public static Rectangle NewRec(Vector2 start, float width, float height)
         {
@@ -242,6 +245,21 @@ namespace VoidInventory
             {
                 dic.Remove(key);
             }
+        }
+        public static string GetCheckCode(this Recipe recipe)
+        {
+            StringBuilder sb = new();
+            void Write(Item item)
+            {
+                sb.Append(item.ModItem?.FullName ?? (item.type.ToString()));
+                sb.Append(item.stack);
+            }
+            Write(recipe.createItem);
+            recipe.requiredItem.ForEach(Write);
+            recipe.requiredTile.ForEach(tile => sb.Append(tile));
+            recipe.Conditions.ForEach(c => sb.Append(c.Description.Key));
+            recipe.acceptedGroups.ForEach(id => sb.Append(RecipeGroup.recipeGroups[id].GetText()));
+            return Encoding.UTF8.GetString(md5.ComputeHash(Encoding.UTF8.GetBytes(sb.ToString())));
         }
     }
 }

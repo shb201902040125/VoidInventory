@@ -1,4 +1,5 @@
-﻿using Terraria.GameInput;
+﻿using Terraria;
+using Terraria.GameInput;
 using Terraria.ModLoader.IO;
 using VoidInventory.Content;
 
@@ -43,7 +44,6 @@ namespace VoidInventory
                 visible = !visible;
             }
         }
-
         private static BaseUIElement GetUI(string name) => VoidInventory.Ins.uis.Elements[name];
     }
 }
