@@ -159,7 +159,7 @@ namespace VoidInventory
                 ui.leftView.AddElement(tex);
                 count++;
             }
-            if(ui.focusType==lastItem.type)
+            if (lastItem is not null && ui.focusType == lastItem.type)
             {
                 ui.SortRight(_items[ui.focusType]);
             }
@@ -206,6 +206,7 @@ namespace VoidInventory
                 }
             }
             _items.RemoveAll(type => !HasItem(type, out _));
+            RefreshUI();
             Updating = false;
         }
 
