@@ -8,10 +8,10 @@ namespace VoidInventory
 {
     public class VInventory
     {
-        private static Dictionary<Version, Action<VInventory, TagCompound>> LoadMethod = new();
         internal static Filter<Item, IEnumerable<Item>> currentFilter;
         internal Dictionary<int, List<Item>> _items = new();
         internal List<RecipeTask> recipeTasks = new();
+        internal int tryDelay;
         /// <summary>
         /// 如果此值为True，UI应当不可交互
         /// </summary>
@@ -22,7 +22,6 @@ namespace VoidInventory
         internal bool HasWater, HasLava, HasHoney, HasShimmer;
         static VInventory()
         {
-            LoadMethod[new Version(0, 0, 0, 1)] = Load_0001;
         }
 
         private static List<Item> SplitItems(Item item)
@@ -45,6 +44,15 @@ namespace VoidInventory
             {
                 mergaTask = new(() => Merga_Inner(mergaQueue.Dequeue()));
                 mergaTask.Start();
+            }
+            else
+            {
+                tryDelay++;
+                if (tryDelay == 300)
+                {
+                    TryFinishRecipeTasks();
+                    tryDelay = 0;
+                }
             }
         }
         /// <summary>
@@ -111,6 +119,7 @@ namespace VoidInventory
                 }
                 //清除合并线程
                 mergaTask = null;
+                tryDelay = 0;
                 //进行刷新UI的回调
                 RefreshUI(item);
             }
@@ -149,7 +158,7 @@ namespace VoidInventory
                 ui.leftView.AddElement(tex);
                 count++;
             }
-            if (ui.focusType == lastItem.type)
+            if (lastItem is not null && ui.focusType == lastItem.type)
             {
                 ui.SortRight(_items[ui.focusType]);
             }
@@ -196,6 +205,7 @@ namespace VoidInventory
                 }
             }
             _items.RemoveAll(type => !HasItem(type, out _));
+            RefreshUI();
             Updating = false;
         }
 
@@ -290,14 +300,61 @@ namespace VoidInventory
         }
         internal void Save(TagCompound tag)
         {
-            tag[nameof(Version)] = "0.0.0.1";
+            tag["version"] = "0.0.0.1";
+            List<Item> items = new();
+            foreach (var pair in _items)
+            {
+                if (pair.Value.Sum(i => i.stack) < 1)
+                {
+                    continue;
+                }
+                items.AddRange(pair.Value);
+            }
+            tag[nameof(_items)] = items;
+            TagCompound taskTag = new();
+            RecipeTask.Save(taskTag, recipeTasks);
+            tag[nameof(recipeTasks)] = taskTag;
         }
         internal void Load(TagCompound tag)
         {
+            if(tag.TryGet("version",out string version))
+            {
+                switch (version)
+                {
+                    case "0.0.0.1":
+                        {
+                            Load_0001(tag);
+                            break;
+                        }
+                }
+            }
+            else
+            {
+                VoidInventory.Ins.Logger.Debug("Lost Data:VInventory.Load");
+            }
         }
-
-        private static void Load_0001(VInventory inventory, TagCompound tag)
+        private void Load_0001(TagCompound tag)
         {
+            _items.Clear();
+            if(tag.TryGet(nameof(_items),out List<Item> items))
+            {
+                foreach (var item in items)
+                {
+                    if(_items.TryGetValue(item.type,out List<Item> items2))
+                    {
+                        items2.Add(item);
+                    }
+                    else
+                    {
+                        _items[item.type] = new() { item };
+                    }
+                }
+                MergaAllInInventory();
+            }
+            if (tag.TryGet(nameof(recipeTasks),out TagCompound tasktag))
+            {
+                recipeTasks = RecipeTask.Load(tasktag);
+            }
         }
         internal bool CountTile(int countNeed, params int[] tileNeeds)
         {
