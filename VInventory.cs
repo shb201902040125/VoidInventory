@@ -1,6 +1,5 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
-using Terraria;
 using Terraria.ModLoader.IO;
 using VoidInventory.Content;
 using VoidInventory.Filters;
@@ -117,7 +116,7 @@ namespace VoidInventory
             }
         }
 
-        private void RefreshUI(Item lastItem=null,Filter<Item, IEnumerable<Item>> filter = null)
+        private void RefreshUI(Item lastItem = null, Filter<Item, IEnumerable<Item>> filter = null)
         {
             currentFilter = filter ?? currentFilter;
             List<Item> forUI = new();
@@ -150,7 +149,7 @@ namespace VoidInventory
                 ui.leftView.AddElement(tex);
                 count++;
             }
-            if(ui.focusType==lastItem.type)
+            if (ui.focusType == lastItem.type)
             {
                 ui.SortRight(_items[ui.focusType]);
             }

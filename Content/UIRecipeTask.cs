@@ -122,10 +122,11 @@ namespace VoidInventory.Content
                 timer = 0;
             }
         }
-        private int RequireCount(int itemType)
+        private static int RequireCount(int itemType)
         {
-            //player.checkItemCount(itemType)
             int count = 0;
+            Main.LocalPlayer.VIP().vInventory.HasItem(itemType, out List<Item> items);
+            items.ForEach(x => count += x.stack);
             return count;
         }
         private void Change(int count, int frame)
@@ -257,7 +258,6 @@ namespace VoidInventory.Content
 
                         foreach ((int groupID, int stack) in groups)
                         {
-
                             RecipeGroup group = RecipeGroup.recipeGroups[groupID];
                             RT.exclude.TryAdd(groupID, new Dictionary<int, bool>());
 
