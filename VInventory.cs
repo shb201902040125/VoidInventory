@@ -121,28 +121,29 @@ namespace VoidInventory
                 mergaTask = null;
                 tryDelay = 0;
                 //进行刷新UI的回调
-                RefreshUI(item);
+                RefreshInvUI(item);
             }
+            Updating = false;
         }
 
-        private void RefreshUI(Item lastItem = null, Filter<Item, IEnumerable<Item>> filter = null)
+        private void RefreshInvUI(Item lastItem = null, Filter<Item, IEnumerable<Item>> filter = null)
         {
-            currentFilter = filter ?? currentFilter;
-            List<Item> forUI = new();
-            if (currentFilter is null)
-            {
-                foreach (KeyValuePair<int, List<Item>> items in _items)
-                {
-                    forUI.AddRange(items.Value);
-                }
-            }
-            else
-            {
-                foreach (KeyValuePair<int, List<Item>> pair in _items)
-                {
-                    forUI.AddRange(currentFilter.FilterItems(pair.Value));
-                }
-            }
+            //currentFilter = filter ?? currentFilter;
+            //List<Item> forUI = new();
+            //if (currentFilter is null)
+            //{
+            //    foreach (KeyValuePair<int, List<Item>> items in _items)
+            //    {
+            //        forUI.AddRange(items.Value);
+            //    }
+            //}
+            //else
+            //{
+            //    foreach (KeyValuePair<int, List<Item>> pair in _items)
+            //    {
+            //        forUI.AddRange(currentFilter.FilterItems(pair.Value));
+            //    }
+            //}
             //用forUI刷新UI界面
             VIUI ui = VoidInventory.Ins.uis.Elements[VIUI.NameKey] as VIUI;
             UIItemTex tex;
@@ -162,7 +163,10 @@ namespace VoidInventory
             {
                 ui.SortRight(_items[ui.focusType]);
             }
-            Updating = false;
+        }
+        private void RefreshTaskUI()
+        {
+            //TODO 在这里加一个刷新RecipeTask交互UI的代码，参考上面RefreshInvUI：先清空再重构
         }
         /// <summary>
         /// 将背包里所有物品进行合并(以压缩空间)
@@ -205,7 +209,7 @@ namespace VoidInventory
                 }
             }
             _items.RemoveAll(type => !HasItem(type, out _));
-            RefreshUI();
+            RefreshInvUI();
             Updating = false;
         }
 
@@ -328,10 +332,6 @@ namespace VoidInventory
                         }
                 }
             }
-            else
-            {
-                VoidInventory.Ins.Logger.Debug("Lost Data:VInventory.Load");
-            }
         }
         private void Load_0001(TagCompound tag)
         {
@@ -354,6 +354,7 @@ namespace VoidInventory
             if (tag.TryGet(nameof(recipeTasks),out TagCompound tasktag))
             {
                 recipeTasks = RecipeTask.Load(tasktag);
+                RefreshTaskUI();
             }
         }
         internal bool CountTile(int countNeed, params int[] tileNeeds)

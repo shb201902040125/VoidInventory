@@ -124,10 +124,11 @@ namespace VoidInventory.Content
         }
         private static int RequireCount(int itemType)
         {
-            int count = 0;
-            Main.LocalPlayer.VIP().vInventory.HasItem(itemType, out List<Item> items);
-            items.ForEach(x => count += x.stack);
-            return count;
+            if (Main.LocalPlayer.VIP().vInventory.HasItem(itemType, out List<Item> items))
+            {
+                return items.Sum(i => i.stack);
+            }
+            return 0;
         }
         private void Change(int count, int frame)
         {
