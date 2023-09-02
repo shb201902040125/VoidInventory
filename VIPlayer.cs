@@ -30,6 +30,7 @@ namespace VoidInventory
                 if (!r.firstLoad)
                 {
                     r.OnInitialization();
+                    v.leftView.ClearAllElements();
                     foreach (int item in vInventory._items.Keys)
                     {
                         UIItemTex tex = new(item);
@@ -43,6 +44,9 @@ namespace VoidInventory
                 ref bool visible = ref u.Info.IsVisible;
                 visible = !visible;
             }
+        }
+        public override void OnEnterWorld()
+        {
         }
         private static BaseUIElement GetUI(string name) => VoidInventory.Ins.uis.Elements[name];
     }

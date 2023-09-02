@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
+using Terraria;
 using Terraria.ModLoader.IO;
 using VoidInventory.Content;
 using VoidInventory.Filters;
@@ -51,6 +52,7 @@ namespace VoidInventory
                 if (tryDelay == 300)
                 {
                     TryFinishRecipeTasks();
+                    RefreshTaskUI();
                     tryDelay = 0;
                 }
             }
@@ -126,7 +128,7 @@ namespace VoidInventory
             Updating = false;
         }
 
-        private void RefreshInvUI(Item lastItem = null, Filter<Item, IEnumerable<Item>> filter = null)
+        internal void RefreshInvUI(Item lastItem = null, Filter<Item, IEnumerable<Item>> filter = null)
         {
             //currentFilter = filter ?? currentFilter;
             //List<Item> forUI = new();
@@ -164,9 +166,22 @@ namespace VoidInventory
                 ui.SortRight(_items[ui.focusType]);
             }
         }
-        private void RefreshTaskUI()
+        internal void RefreshTaskUI()
         {
-            //TODO 在这里加一个刷新RecipeTask交互UI的代码，参考上面RefreshInvUI：先清空再重构
+            RTUI ui = VoidInventory.Ins.uis.Elements[RTUI.NameKey] as RTUI;
+            UIRecipeTask task;
+            ui.leftView.ClearAllElements();
+            int count = recipeTasks.Count;
+            for (int i = 0; i < count; i++)
+            {
+                task = new(recipeTasks[i])
+                {
+                    id = i
+                };
+                task.SetSize(-20, 52, 1);
+                task.SetPos(10, 10 + (i * 62));
+                ui.leftView.AddElement(task);
+            }
         }
         /// <summary>
         /// 将背包里所有物品进行合并(以压缩空间)
