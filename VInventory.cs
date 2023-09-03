@@ -169,6 +169,7 @@ namespace VoidInventory
         internal void RefreshTaskUI()
         {
             RTUI ui = VoidInventory.Ins.uis.Elements[RTUI.NameKey] as RTUI;
+            if (!ui.Info.IsVisible) return;
             UIRecipeTask task;
             ui.leftView.ClearAllElements();
             int count = recipeTasks.Count;

@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using Terraria;
 using static VoidInventory.RecipeSupport;
 
 namespace VoidInventory.Content
@@ -181,15 +182,25 @@ namespace VoidInventory.Content
                 }
             }
         }
-        private void AddRecipeTask(Recipe recipe)
+        private void AddRecipeTask(object recipe)
         {
-            UIRecipeTask task = new(recipe)
-            {
-                id = TaskCount
-            };
+
+            UIRecipeTask task;
+            if (recipe is RecipeTask rt) task = new(rt);
+            else if (recipe is Recipe r) task = new(r);
+            else throw new Exception(recipe.GetType().Name+" is not accept");
+            task.id = TaskCount;
             task.SetSize(-20, 52, 1);
             task.SetPos(10, 10 + (TaskCount * 62));
             leftView.AddElement(task);
+        }
+        public void LoadRT()
+        {
+            leftView.ClearAllElements();
+            foreach (RecipeTask rt in Main.LocalPlayer.VIP().vInventory.recipeTasks)
+            {
+                AddRecipeTask(rt);
+            }
         }
         public void SortRecipeTask(int id)
         {

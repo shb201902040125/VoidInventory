@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using Humanizer;
+using System.Linq;
 using Terraria;
 using Terraria.Localization;
 using Terraria.Map;
@@ -17,98 +18,22 @@ namespace VoidInventory.Content
         private int timer;
         public RecipeTask RT { get; private set; }
         public static readonly DynamicSpriteFont font = FontAssets.MouseText.Value;
-        internal UIRecipeTask(RecipeTask task):base(task.RecipeTarget)
+        public UIRecipeTask(RecipeTask task) : base(task.RecipeTarget)
         {
-            Player player = Main.LocalPlayer;
-            VIPlayer vip = player.VIP();
-            VInventory inv = vip.vInventory;
-            Item item = task.RecipeTarget.createItem;
-            down = new bool[4];
-
             RT = task;
-
-            float x = 57;
-
-            UIImage state = new(TextureAssets.MagicPixel.Value, 12, 52 - 12, 0, 0, R);
-            state.SetPos(52 + 5, 6);
-            Register(state);
-
-            x += 5 + state.Width;
-
-            UIImage reduce = new(T2D("Terraria/Images/RecLeft"));
-            reduce.SetPos(x, font.LineSpacing + 4);
-            reduce.Events.OnLeftDown += evt => down[0] = true;
-            reduce.Events.OnLeftUp += evt => down[0] = false;
-            reduce.Events.OnRightDown += evt => down[1] = true;
-            reduce.Events.OnRightUp += evt => down[1] = false;
-            reduce.Events.OnMouseOut += evt => down[0] = down[1] = false;
-            Register(reduce);
-
-            x += 5 + reduce.Width;
-
-            UIImage add = new(T2D("Terraria/Images/RecRight"));
-            add.SetPos(x, font.LineSpacing + 4);
-            add.Events.OnLeftDown += evt => down[2] = true;
-            add.Events.OnLeftUp += evt => down[2] = false;
-            add.Events.OnRightDown += evt => down[3] = true;
-            add.Events.OnRightUp += evt => down[3] = false;
-            add.Events.OnMouseOut += evt => down[2] = down[3] = false;
-            Register(add);
-
-            x += 5 + add.Width;
-
-            UIText func = new(GTV("Func.0"), drawStyle: 0);
-            func.SetSize(func.TextSize);
-            func.SetPos(x, font.LineSpacing + 3);
-            func.Events.OnLeftClick += evt =>
-            {
-                RT.Stopping = !RT.Stopping;
-                state.color = RT.Stopping ? G : R;
-            };
-            func.Events.OnRightClick += evt =>
-            {
-                if (++RT.TaskState > 2)
-                {
-                    RT.TaskState = 0;
-                }
-
-                func.ChangeText(GTV($"Func.{RT.TaskState}"));
-            };
-            func.Events.OnMouseOver += evt => func.color = R;
-            func.Events.OnMouseOut += evt => func.color = Color.White;
-            Register(func);
-
-            UIImage remove = new(T2D(Asset + "Close"));
-            remove.SetPos(-5 - 16, 3, 1);
-            remove.Events.OnLeftClick += evt =>
-            {
-                ParentElement.Remove(this);
-                RTUI ui = VoidInventory.Ins.uis.Elements[RTUI.NameKey] as RTUI;
-                ui.SortRecipeTask(id);
-                inv.recipeTasks.Remove(RT);
-            };
-            Register(remove);
-
-            UIText detail = new(GTV("Detail"));
-            detail.SetSize(detail.TextSize);
-            detail.SetPos(-detail.Width - 3, font.LineSpacing + 3, 1);
-            detail.Events.OnLeftClick += evt => SetDetail(task.RecipeTarget);
-            detail.Events.OnMouseOver += evt => detail.color = R;
-            detail.Events.OnMouseOut += evt => detail.color = Color.White;
-            Register(detail);
+            Structure(Main.LocalPlayer.VIP().vInventory);
         }
         public UIRecipeTask(Recipe recipe) : base(recipe)
         {
-            Player player = Main.LocalPlayer;
-            VIPlayer vip = player.VIP();
-            VInventory inv = vip.vInventory;
-            Item item = recipe.createItem;
-            down = new bool[4];
-
+            VInventory inv = Main.LocalPlayer.VIP().vInventory;
             RecipeTask recipeTask = new(recipe);
             inv.recipeTasks.Add(recipeTask);
             RT = recipeTask;
-
+            Structure(inv);
+        }
+        private void Structure(VInventory inv)
+        {
+            down = new bool[4];
             float x = 57;
 
             UIImage state = new(TextureAssets.MagicPixel.Value, 12, 52 - 12, 0, 0, R);
@@ -174,7 +99,7 @@ namespace VoidInventory.Content
             UIText detail = new(GTV("Detail"));
             detail.SetSize(detail.TextSize);
             detail.SetPos(-detail.Width - 3, font.LineSpacing + 3, 1);
-            detail.Events.OnLeftClick += evt => SetDetail(recipe);
+            detail.Events.OnLeftClick += evt => SetDetail(RT.RecipeTarget);
             detail.Events.OnMouseOver += evt => detail.color = R;
             detail.Events.OnMouseOut += evt => detail.color = Color.White;
             Register(detail);

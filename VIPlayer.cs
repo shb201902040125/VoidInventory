@@ -38,6 +38,7 @@ namespace VoidInventory
                         v.leftView.AddElement(tex);
                     }
                     v.SortLeft();
+                    r.LoadRT();
                     r.firstLoad = true;
                 }
                 BaseUIElement u = vi ? v : r;
