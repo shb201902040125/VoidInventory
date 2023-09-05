@@ -44,6 +44,18 @@ namespace VoidInventory
                 BaseUIElement u = vi ? v : r;
                 ref bool visible = ref u.Info.IsVisible;
                 visible = !visible;
+                if(visible)
+                {
+                    var inv = Main.LocalPlayer.GetModPlayer<VIPlayer>().vInventory;
+                    if (vi)
+                    {
+                        inv.RefreshInvUI();
+                    }
+                    else
+                    {
+                        inv.RefreshTaskUI();
+                    }
+                }
             }
         }
         public override void OnEnterWorld()
