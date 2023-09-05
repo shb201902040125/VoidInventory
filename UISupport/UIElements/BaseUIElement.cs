@@ -671,7 +671,7 @@
         {
             return ParentElement == null
                 ? Rectangle.Intersect(new Rectangle(0, 0, Main.screenWidth, Main.screenHeight), HitBox())
-                : Rectangle.Intersect(Rectangle.Intersect(HitBox(), ParentElement.HitBox()), ParentElement.GetCanHitBox());
+                : Rectangle.Intersect(Rectangle.Intersect(HitBox(), ParentElement.HiddenOverflowRectangle), ParentElement.GetCanHitBox());
         }
 
         /// <summary>

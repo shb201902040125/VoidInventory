@@ -184,7 +184,6 @@ namespace VoidInventory.Content
         }
         private void AddRecipeTask(object recipe)
         {
-
             UIRecipeTask task;
             if (recipe is RecipeTask rt) task = new(rt);
             else if (recipe is Recipe r) task = new(r);
