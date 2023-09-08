@@ -40,11 +40,9 @@ namespace VoidInventory.UISupport.UIElements
             Info.SetMargin(4f);
             if (_innerPanel == null)
             {
-                _innerPanel = new InnerPanel
-                {
-                    overrideGetCanHitBox = new(ParentElement.GetCanHitBox)
-                };
+                _innerPanel = new InnerPanel();
                 Register(_innerPanel);
+                overrideGetCanHitBox = new(ParentElement.GetCanHitBox);
             }
         }
         public void SetVerticalScrollbar(VerticalScrollbar scrollbar)
