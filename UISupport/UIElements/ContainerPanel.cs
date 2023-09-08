@@ -42,7 +42,7 @@ namespace VoidInventory.UISupport.UIElements
             {
                 _innerPanel = new InnerPanel();
                 Register(_innerPanel);
-                overrideGetCanHitBox = new(ParentElement.GetCanHitBox);
+                _innerPanel.overrideGetCanHitBox = new(ParentElement.GetCanHitBox);
             }
         }
         public void SetVerticalScrollbar(VerticalScrollbar scrollbar)
