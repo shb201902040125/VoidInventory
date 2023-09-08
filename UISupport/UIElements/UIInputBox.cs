@@ -7,6 +7,7 @@ namespace VoidInventory.UISupport.UIElements
     public class UIInputBox : BaseUIElement
     {
         private const string cursorSym = "|";
+        private readonly string prompt;
         public string Text { get; set; }
         public Action OnInputText;
         public int OldTextLength { get; private set; }
@@ -120,7 +121,8 @@ namespace VoidInventory.UISupport.UIElements
 
         public UIInputBox(string text = "", Point cursorPosition = default, Color color = default, Vector2 symSizeOffice = default)
         {
-            Text = text;
+            prompt = text;
+            Text = "";
             _cursorPosition = cursorPosition;
             _color = color;
             _cursorPosition = Point.Zero;
@@ -187,6 +189,12 @@ namespace VoidInventory.UISupport.UIElements
 
         public override void DrawChildren(SpriteBatch sb)
         {
+            if (!isEnableIME && Text.Length == 0)
+            {
+                sb.DrawString(font, prompt, Info.Location + offset, _color * 0.5f);
+                base.DrawChildren(sb);
+                return;
+            }
             string[] texts = Text.Split('\n');
             float offsetY = 0f;
             string text;

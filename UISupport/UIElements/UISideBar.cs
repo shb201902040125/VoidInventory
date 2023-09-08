@@ -12,7 +12,7 @@
         private float? baseX = null, baseY = null, baseL = null, baseT = null;
         public UIImage button;
         /// <param name="dir">0123顺转四向</param>
-        public UISideBar(string texKey, float x, float y, int dir = 0) : base(texKey, x, y)
+        public UISideBar(string texKey, float x, float y, int dir = 0) : base(x, y, texKey)
         {
             CanDrag = false;
             baseX ??= x;
@@ -149,7 +149,7 @@
             Vector2 size = new(Tex.Width / 6f);
             /*Main.graphics.PreferMultiSampling = true;
             Main.graphics.ApplyChanges();*/
-            RasterizerState overflowHiddenRasterizerState = new RasterizerState
+            RasterizerState overflowHiddenRasterizerState = new()
             {
                 CullMode = CullMode.None,
                 ScissorTestEnable = true

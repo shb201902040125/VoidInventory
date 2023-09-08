@@ -40,7 +40,10 @@ namespace VoidInventory.UISupport.UIElements
             Info.SetMargin(4f);
             if (_innerPanel == null)
             {
-                _innerPanel = new InnerPanel();
+                _innerPanel = new InnerPanel
+                {
+                    overrideGetCanHitBox = new(ParentElement.GetCanHitBox)
+                };
                 Register(_innerPanel);
             }
         }

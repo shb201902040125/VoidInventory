@@ -1,5 +1,4 @@
 ﻿using System.Linq;
-using Terraria;
 using static VoidInventory.RecipeSupport;
 
 namespace VoidInventory.Content
@@ -9,7 +8,7 @@ namespace VoidInventory.Content
         public const string NameKey = "VoidInventory.Content.RTUI";
         public bool firstLoad;
         public UIPanel bg, dbg;
-        public UIBottom left, right;
+        public UIPanel left, right;
         public UIContainerPanel leftView, rightView;
         public UIItemSlot focusItem;
         public UIInputBox input;
@@ -26,7 +25,7 @@ namespace VoidInventory.Content
             }
 
             RemoveAll();
-            bg = new(default, 800, 600);
+            bg = new(800, 600);
             bg.SetCenter(0, 0, 0.5f, 0.5f);
             bg.CanDrag = true;
             Register(bg);
@@ -46,15 +45,15 @@ namespace VoidInventory.Content
             };
             bg.Register(focusItem);
 
-            input = new(color: Color.White);
-            input.SetSize(160, 36);
-            input.SetPos(-input.Width - 20, 20 + 10, 1);
-            input.OnInputText += () =>
-            {
-                FindRecipe();
-            };
-            input.DrawRec[0] = Color.Red;
-            bg.Register(input);
+            UIPanel inputbg = new(160 + 24, 30, 12, 4, Color.White, 1f);
+            inputbg.SetPos(-inputbg.Width - 20, 20 + 10, 1);
+            bg.Register(inputbg);
+
+            input = new("搜索合成目标", color: Color.Black);
+            input.SetSize(-24, 0, 1, 1);
+            input.SetPos(12, 2);
+            input.OnInputText += FindRecipe;
+            inputbg.Register(input);
 
             UIText VI = new("背包");
             VI.SetSize(VI.TextSize);
@@ -69,9 +68,9 @@ namespace VoidInventory.Content
             };
             bg.Register(VI);
 
-            left = new(-40, -102, 0.5f, 1f);
+            left = new(0, 0);
+            left.SetSize(-40, -102, 0.5f, 1);
             left.SetPos(20, 82);
-            left.DrawRec[0] = Color.White;
             bg.Register(left);
 
             leftView = new();
@@ -84,9 +83,9 @@ namespace VoidInventory.Content
             leftView.SetVerticalScrollbar(leftscroll);
             left.Register(leftscroll);
 
-            right = new(-40, -102, 0.5f, 1f);
+            right = new(0, 0);
+            right.SetSize(-40, -102, 0.5f, 1);
             right.SetPos(20, 82, 0.5f);
-            right.DrawRec[0] = Color.White;
             bg.Register(right);
 
             rightView = new();
@@ -99,7 +98,7 @@ namespace VoidInventory.Content
             rightView.SetVerticalScrollbar(rightscroll);
             right.Register(rightscroll);
 
-            dbg = new(default, 320, 500);
+            dbg = new(320, 500);
             dbg.SetPos(0, 0, 0.1f, 0.35f);
             dbg.Info.IsVisible = false;
             dbg.CanDrag = true;
@@ -187,7 +186,7 @@ namespace VoidInventory.Content
             UIRecipeTask task;
             if (recipe is RecipeTask rt) task = new(rt);
             else if (recipe is Recipe r) task = new(r);
-            else throw new Exception(recipe.GetType().Name+" is not accept");
+            else throw new Exception(recipe.GetType().Name + " is not accept");
             task.id = TaskCount;
             task.SetSize(-20, 52, 1);
             task.SetPos(10, 10 + (TaskCount * 62));

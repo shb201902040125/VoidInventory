@@ -420,7 +420,7 @@
         public virtual void Draw(SpriteBatch sb)
         {
             //声明光栅化状态，剔除状态为不剔除，开启剪切测试
-            RasterizerState overflowHiddenRasterizerState = new RasterizerState
+            RasterizerState overflowHiddenRasterizerState = new()
             {
                 CullMode = CullMode.None,
                 ScissorTestEnable = true
@@ -662,16 +662,16 @@
             action(this);
             ChildrenElements.ForEach(child => action(child));
         }
-
+        public Func<Rectangle> overrideGetCanHitBox;
         /// <summary>
         /// 获取被父部件裁切过的碰撞箱
         /// </summary>
         /// <returns>被父部件裁切过的碰撞箱</returns>
         public virtual Rectangle GetCanHitBox()
         {
-            return ParentElement == null
+            return overrideGetCanHitBox != null ? overrideGetCanHitBox.Invoke() : (ParentElement == null
                 ? Rectangle.Intersect(new Rectangle(0, 0, Main.screenWidth, Main.screenHeight), HitBox())
-                : Rectangle.Intersect(Rectangle.Intersect(HitBox(), ParentElement.HiddenOverflowRectangle), ParentElement.GetCanHitBox());
+                : Rectangle.Intersect(Rectangle.Intersect(HitBox(), ParentElement.HiddenOverflowRectangle), ParentElement.GetCanHitBox()));
         }
 
         /// <summary>
