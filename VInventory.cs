@@ -1,6 +1,5 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
-using Terraria;
 using Terraria.ModLoader.IO;
 using VoidInventory.Content;
 using VoidInventory.Filters;
@@ -130,6 +129,10 @@ namespace VoidInventory
 
         internal void RefreshInvUI(Item lastItem = null, Filter<Item, IEnumerable<Item>> filter = null)
         {
+            if (Main.dedServ)
+            {
+                return;
+            }
             //currentFilter = filter ?? currentFilter;
             //List<Item> forUI = new();
             //if (currentFilter is null)
@@ -150,10 +153,10 @@ namespace VoidInventory
             VIUI ui = VoidInventory.Ins.uis.Elements[VIUI.NameKey] as VIUI;
             UIItemTex tex;
             ui.leftView.ClearAllElements();
-            var keys = _items.Keys.ToList();
+            List<int> keys = _items.Keys.ToList();
             keys.Sort();
             int count = 0;
-            foreach (var key in keys)
+            foreach (int key in keys)
             {
                 tex = new(key);
                 tex.SetPos((count % 6 * 56) + 10, (count / 6 * 56) + 10);
@@ -168,8 +171,16 @@ namespace VoidInventory
         }
         internal void RefreshTaskUI()
         {
+            if (Main.dedServ)
+            {
+                return;
+            }
             RTUI ui = VoidInventory.Ins.uis.Elements[RTUI.NameKey] as RTUI;
-            if (!ui.Info.IsVisible) return;
+            if (!ui.Info.IsVisible)
+            {
+                return;
+            }
+
             UIRecipeTask task;
             ui.leftView.ClearAllElements();
             int count = recipeTasks.Count;
@@ -322,7 +333,7 @@ namespace VoidInventory
         {
             tag["version"] = "0.0.0.1";
             List<Item> items = new();
-            foreach (var pair in _items)
+            foreach (KeyValuePair<int, List<Item>> pair in _items)
             {
                 if (pair.Value.Sum(i => i.stack) < 1)
                 {
@@ -337,7 +348,7 @@ namespace VoidInventory
         }
         internal void Load(TagCompound tag)
         {
-            if(tag.TryGet("version",out string version))
+            if (tag.TryGet("version", out string version))
             {
                 switch (version)
                 {
@@ -352,11 +363,11 @@ namespace VoidInventory
         private void Load_0001(TagCompound tag)
         {
             _items.Clear();
-            if(tag.TryGet(nameof(_items),out List<Item> items))
+            if (tag.TryGet(nameof(_items), out List<Item> items))
             {
-                foreach (var item in items)
+                foreach (Item item in items)
                 {
-                    if(_items.TryGetValue(item.type,out List<Item> items2))
+                    if (_items.TryGetValue(item.type, out List<Item> items2))
                     {
                         items2.Add(item);
                     }
@@ -367,7 +378,7 @@ namespace VoidInventory
                 }
                 MergaAllInInventory();
             }
-            if (tag.TryGet(nameof(recipeTasks),out TagCompound tasktag))
+            if (tag.TryGet(nameof(recipeTasks), out TagCompound tasktag))
             {
                 recipeTasks = RecipeTask.Load(tasktag);
                 RefreshTaskUI();

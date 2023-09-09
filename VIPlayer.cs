@@ -1,5 +1,4 @@
-﻿using Terraria;
-using Terraria.GameInput;
+﻿using Terraria.GameInput;
 using Terraria.ModLoader.IO;
 using VoidInventory.Content;
 
@@ -44,9 +43,9 @@ namespace VoidInventory
                 BaseUIElement u = vi ? v : r;
                 ref bool visible = ref u.Info.IsVisible;
                 visible = !visible;
-                if(visible)
+                if (visible)
                 {
-                    var inv = Main.LocalPlayer.GetModPlayer<VIPlayer>().vInventory;
+                    VInventory inv = Main.LocalPlayer.GetModPlayer<VIPlayer>().vInventory;
                     if (vi)
                     {
                         inv.RefreshInvUI();

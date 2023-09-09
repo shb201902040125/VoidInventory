@@ -1,6 +1,4 @@
-﻿using Humanizer;
-using System.Linq;
-using Terraria;
+﻿using System.Linq;
 using Terraria.Localization;
 using Terraria.Map;
 
@@ -130,11 +128,7 @@ namespace VoidInventory.Content
         }
         private static int RequireCount(int itemType)
         {
-            if (Main.LocalPlayer.VIP().vInventory.HasItem(itemType, out List<Item> items))
-            {
-                return items.Sum(i => i.stack);
-            }
-            return 0;
+            return Main.LocalPlayer.VIP().vInventory.HasItem(itemType, out List<Item> items) ? items.Sum(i => i.stack) : 0;
         }
         private void Change(int count, int frame)
         {
