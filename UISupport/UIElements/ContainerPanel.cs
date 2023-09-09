@@ -106,7 +106,8 @@ namespace VoidInventory.UISupport.UIElements
             {
                 Calculation();
             }
-
+            //Hscroll?.Info
+            Vscroll?.UpdateBarValue();
             return flag;
         }
         public bool RemoveElement(BaseUIElement element)
@@ -117,11 +118,13 @@ namespace VoidInventory.UISupport.UIElements
                 Calculation();
             }
 
+            Vscroll?.UpdateBarValue();
             return flag;
         }
         public void ClearAllElements()
         {
             _innerPanel.ChildrenElements.Clear();
+            Vscroll?.UpdateBarValue();
             Calculation();
         }
         private void CalculationInnerPanelSize()

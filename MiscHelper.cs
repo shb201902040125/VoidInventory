@@ -261,5 +261,9 @@ namespace VoidInventory
             recipe.acceptedGroups.ForEach(id => sb.Append(RecipeGroup.recipeGroups[id].GetText()));
             return Encoding.UTF8.GetString(md5.ComputeHash(Encoding.UTF8.GetBytes(sb.ToString())));
         }
+        public static Rectangle Order(this Rectangle rec, int? x = null, int? y = null, int? w = null, int? h = null)
+        {
+            return new Rectangle(x ?? rec.X, y ?? rec.Y, w ?? rec.Width, h ?? rec.Height);
+        }
     }
 }

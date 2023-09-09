@@ -78,7 +78,7 @@ namespace VoidInventory.Content
             left.Register(leftView);
 
             VerticalScrollbar leftscroll = new(62);
-            leftscroll.Info.IsHidden = true;
+            //leftscroll.Info.IsHidden = true;
             leftscroll.Info.Left.Pixel += 10;
             leftView.SetVerticalScrollbar(leftscroll);
             left.Register(leftscroll);
