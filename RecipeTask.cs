@@ -441,7 +441,9 @@ namespace VoidInventory
         }
         internal static void OpenToRead()
         {
-            using OpenFileDialog fileDialog = new();
+            Main.NewText("Do Open To Read");
+            Assembly assembly = Assembly.Load(VoidInventory.Ins.GetFileBytes("lib/System.Windows.Forms.dll"));
+            dynamic fileDialog = assembly.GetType("OpenFileDialog").GetType().GetConstructor(Array.Empty<Type>());
             fileDialog.Filter = "VI保存文件|*.vif|所有文件|*.*";
             fileDialog.Title = "选择RecipeTask保存文件";
             if (fileDialog.ShowDialog().ToString() == "OK")
@@ -456,6 +458,7 @@ namespace VoidInventory
                         VIPlayer player = null;
                         if(!Main.LocalPlayer?.TryGetModPlayer(out player)??false)
                         {
+                            fileDialog.Dispose();
                             return;
                         }
                         player.vInventory.recipeTasks.AddRange(Load(tag));
@@ -464,14 +467,18 @@ namespace VoidInventory
                     catch
                     {
                         Main.NewText("此文件非可解读保存文件.可能是数据损坏");
+                        fileDialog.Dispose();
                         return;
                     }
                 }
             }
+            fileDialog.Dispose();
         }
         internal static void OpenToSave()
         {
-            using SaveFileDialog fileDialog = new SaveFileDialog();
+            Main.NewText("Do Open To Save");
+            Assembly assembly = Assembly.Load(VoidInventory.Ins.GetFileBytes("lib/System.Windows.Forms.dll"));
+            dynamic fileDialog = assembly.GetType("OpenFileDialog").GetType().GetConstructor(Array.Empty<Type>());
             fileDialog.Filter = "VI保存文件|*.vif|所有文件|*.*";
             if (fileDialog.ShowDialog().ToString() == "OK")
             {
@@ -499,18 +506,21 @@ namespace VoidInventory
                     }
                     else if (result == VIMessageBox.VIDialogResult.Cancel)
                     {
+                        fileDialog.Dispose();
                         return; // 用户取消保存操作
                     }
                 }
                 VIPlayer player = null;
                 if (!Main.LocalPlayer?.TryGetModPlayer(out player) ?? false)
                 {
+                    fileDialog.Dispose();
                     return;
                 }
                 TagCompound tag = new();
                 Save(tag, player.vInventory.recipeTasks);
                 TagIO.ToFile(tag, file);
             }
+            fileDialog.Dispose();
         }
     }
 }
