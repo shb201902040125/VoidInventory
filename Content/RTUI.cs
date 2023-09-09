@@ -55,6 +55,18 @@ namespace VoidInventory.Content
             input.OnInputText += FindRecipe;
             inputbg.Register(input);
 
+            UIText load = new("读取");
+            load.SetPos(-inputbg.Width - 20 - load.Width - 20, 20 + 10, 1);
+            load.Events.OnUpdate += evt => load.color = load.Info.IsMouseHover ? Color.Gold : Color.White;
+            load.Events.OnLeftClick += evt => RecipeTask.OpenToRead();
+            bg.Register(load);
+
+            UIText save = new("保存");
+            save.SetPos(-inputbg.Width - 20 - load.Width - 20 - save.Width - 20, 20 + 10, 1);
+            save.Events.OnUpdate += evt => save.color = save.Info.IsMouseHover ? Color.Gold : Color.White;
+            save.Events.OnLeftClick += evt => RecipeTask.OpenToSave();
+            bg.Register(save);
+
             UIText VI = new("背包");
             VI.SetSize(VI.TextSize);
             VI.SetCenter(0, 30, 0.5f, 0);
