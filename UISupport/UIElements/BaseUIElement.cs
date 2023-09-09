@@ -671,7 +671,7 @@
         {
             return overrideGetCanHitBox != null ? overrideGetCanHitBox.Invoke() : (ParentElement == null
                 ? Rectangle.Intersect(new Rectangle(0, 0, Main.screenWidth, Main.screenHeight), HitBox())
-                : Rectangle.Intersect(Rectangle.Intersect(HitBox(), ParentElement.HiddenOverflowRectangle), ParentElement.GetCanHitBox()));
+                : Rectangle.Intersect(HitBox(), ParentElement.GetCanHitBox()));
         }
 
         /// <summary>
@@ -741,7 +741,6 @@
         public static void DrawStr(SpriteBatch sb, DynamicSpriteFont font, string text, Vector2 pos, Vector2 origin = default, Vector2 scale = default, Color? color = null)
         {
             sb.DrawString(font, text, pos, color ?? Color.White, 0, origin, scale, 0, 0);
-
         }
     }
 }
