@@ -22,7 +22,7 @@ namespace VoidInventory
     {
         public static string GTV(string key) => Language.GetTextValue("Mods.VoidInventory." + key);
         public const string Asset = "VoidInventory/UISupport/Asset/";
-        static MD5 md5 = MD5.Create();
+        private static MD5 md5 = MD5.Create();
         public static Rectangle NewRec(Vector2 start, Vector2 size) => NewRec(start.ToPoint(), size.ToPoint());
         public static Rectangle NewRec(Vector2 start, float width, float height)
         {
@@ -91,7 +91,7 @@ namespace VoidInventory
         /// <param name="type"></param>
         /// <param name="name">是否自带类名</param>
         /// <returns></returns>
-        public static string Path(this object type, bool name = false)
+        public static string GetPath(this object type, bool name = false)
         {
             Type target = type.GetType();
             return target.Namespace.Replace(".", "/") + $"/{(name ? target.Name : null)}";
@@ -102,7 +102,7 @@ namespace VoidInventory
         /// <typeparam name="T"></typeparam>
         /// <param name="name"></param>
         /// <returns></returns>
-        public static string Path<T>(bool name = false)
+        public static string GetPath<T>(bool name = false)
         {
             Type target = typeof(T);
             return target.Namespace.Replace(".", "/") + $"/{(name ? target.Name : null)}";
@@ -113,7 +113,7 @@ namespace VoidInventory
         /// <param name="type"></param>
         /// <param name="fileName"></param>
         /// <returns></returns>
-        public static string Path(this object type, string fileName) => type.Path(false) + fileName;
+        public static string GetPath(this object type, string fileName) => type.GetPath(false) + fileName;
         public static Texture2D Tex(this Entity entity)
         {
             return entity is Projectile proj

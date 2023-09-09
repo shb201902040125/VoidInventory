@@ -183,10 +183,9 @@ namespace VoidInventory.Content
         }
         private void AddRecipeTask(object recipe)
         {
-            UIRecipeTask task;
-            if (recipe is RecipeTask rt) task = new(rt);
-            else if (recipe is Recipe r) task = new(r);
-            else throw new Exception(recipe.GetType().Name + " is not accept");
+            UIRecipeTask task = recipe is RecipeTask rt
+                ? new(rt)
+                : (global::VoidInventory.Content.UIRecipeTask)(recipe is Recipe r ? new(r) : throw new Exception(recipe.GetType().Name + " is not accept"));
             task.id = TaskCount;
             task.SetSize(-20, 52, 1);
             task.SetPos(10, 10 + (TaskCount * 62));

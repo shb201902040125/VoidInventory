@@ -1,8 +1,6 @@
-﻿using System.Collections.Generic;
-using System.IO;
+﻿using System.IO;
 using System.Linq;
-using System.Text;
-using Terraria.Localization;
+using System.Windows.Forms;
 using Terraria.ModLoader.IO;
 
 namespace VoidInventory
@@ -341,11 +339,11 @@ namespace VoidInventory
                 writer.Write(task.CountTarget);
                 writer.Write(task.Stopping);
                 writer.Write(task.exclude.Count);
-                foreach(var pair in task.exclude)
+                foreach (KeyValuePair<int, Dictionary<int, bool>> pair in task.exclude)
                 {
                     writer.Write(RecipeGroup.recipeGroups[pair.Key].GetText());
                     writer.Write(pair.Value.Count);
-                    foreach(var subpair in pair.Value)
+                    foreach (KeyValuePair<int, bool> subpair in pair.Value)
                     {
                         writer.Write(ItemLoader.GetItem(subpair.Key)?.FullName ?? (subpair.Key.ToString()));
                         writer.Write(subpair.Value);
@@ -356,15 +354,15 @@ namespace VoidInventory
         }
         public static List<RecipeTask> Load(TagCompound tag)
         {
-            if(tag.TryGet<byte[]>("RTS",out var data))
+            if (tag.TryGet<byte[]>("RTS", out byte[] data))
             {
                 Dictionary<string, Recipe> rs = new();
                 Dictionary<string, int> rgs = new();
-                foreach (var r in Main.recipe[0..Recipe.maxRecipes])
+                foreach (Recipe r in Main.recipe[0..Recipe.maxRecipes])
                 {
                     rs[r.GetCheckCode()] = r;
                 }
-                foreach (var rg in RecipeGroup.recipeGroups) 
+                foreach (KeyValuePair<int, RecipeGroup> rg in RecipeGroup.recipeGroups)
                 {
                     rgs[rg.Value.GetText()] = rg.Key;
                 }
@@ -373,13 +371,13 @@ namespace VoidInventory
                 string version = reader.ReadString();
                 return version switch
                 {
-                    "0.0.0.1" => Load_0001(reader,rs,rgs),
+                    "0.0.0.1" => Load_0001(reader, rs, rgs),
                     _ => new(),
                 };
             }
             return new();
         }
-        public static List<RecipeTask> Load_0001(BinaryReader reader,Dictionary<string,Recipe> recipeMap,Dictionary<string,int> recipeGroupMap)
+        public static List<RecipeTask> Load_0001(BinaryReader reader, Dictionary<string, Recipe> recipeMap, Dictionary<string, int> recipeGroupMap)
         {
             List<RecipeTask> result = new();
             int count = reader.ReadInt32();
@@ -390,7 +388,7 @@ namespace VoidInventory
                 int countTarget = reader.ReadInt32();
                 bool stoppint = reader.ReadBoolean();
                 int excludeCount = reader.ReadInt32();
-                Dictionary<int,Dictionary<int, bool>> exclude = new();
+                Dictionary<int, Dictionary<int, bool>> exclude = new();
                 for (int j = 0; j < excludeCount; j++)
                 {
                     string name = reader.ReadString();
@@ -401,14 +399,7 @@ namespace VoidInventory
                         string item = reader.ReadString();
                         if (!int.TryParse(item, out int type))
                         {
-                            if (ModContent.TryFind(item, out ModItem modItem))
-                            {
-                                type = modItem.Type;
-                            }
-                            else
-                            {
-                                type = -1;
-                            }
+                            type = ModContent.TryFind(item, out ModItem modItem) ? modItem.Type : -1;
                         }
                         sube[type] = reader.ReadBoolean();
                     }
@@ -426,13 +417,13 @@ namespace VoidInventory
                         Stopping = stoppint,
                         exclude = exclude
                     };
-                    foreach(var trg in task.RecipeTarget.acceptedGroups)
+                    foreach (int trg in task.RecipeTarget.acceptedGroups)
                     {
-                        if(!exclude.ContainsKey(trg))
+                        if (!exclude.ContainsKey(trg))
                         {
                             RecipeGroup addExcludeRG = RecipeGroup.recipeGroups[trg];
                             Dictionary<int, bool> addExclude = new();
-                            foreach(var type in addExcludeRG.ValidItems)
+                            foreach (int type in addExcludeRG.ValidItems)
                             {
                                 addExclude[type] = false;
                             }
@@ -447,6 +438,79 @@ namespace VoidInventory
         internal string GetReportMessage()
         {
             return string.Format(GTV($"RecipeTaskFinish"), Lang.GetItemNameValue(RecipeTarget.createItem.type));
+        }
+        internal static void OpenToRead()
+        {
+            using OpenFileDialog fileDialog = new();
+            fileDialog.Filter = "VI保存文件|*.vif|所有文件|*.*";
+            fileDialog.Title = "选择RecipeTask保存文件";
+            if (fileDialog.ShowDialog().ToString() == "OK")
+            {
+                string file = fileDialog.FileName;
+                if (File.Exists(file))
+                {
+                    TagCompound tag = null;
+                    try
+                    {
+                        tag = TagIO.FromFile(file);
+                        VIPlayer player = null;
+                        if(!Main.LocalPlayer?.TryGetModPlayer(out player)??false)
+                        {
+                            return;
+                        }
+                        player.vInventory.recipeTasks.AddRange(Load(tag));
+                        player.vInventory.RefreshTaskUI();
+                    }
+                    catch
+                    {
+                        Main.NewText("此文件非可解读保存文件.可能是数据损坏");
+                        return;
+                    }
+                }
+            }
+        }
+        internal static void OpenToSave()
+        {
+            using SaveFileDialog fileDialog = new SaveFileDialog();
+            fileDialog.Filter = "VI保存文件|*.vif|所有文件|*.*";
+            if (fileDialog.ShowDialog().ToString() == "OK")
+            {
+                string file = fileDialog.FileName;
+                if (File.Exists(file))
+                {
+                    var result = VIMessageBox.Show("文件已存在。要更改文件名吗？", "文件已存在", VIMessageBox.VIMessageBoxButtons.YesNoCancel, VIMessageBox.VIMessageBoxIcon.Warning);
+
+                    if (result == VIMessageBox.VIDialogResult.Yes)
+                    {
+                        // 生成一个新的文件名（例如，在文件名后面添加数字）
+                        int count = 1;
+                        string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(file);
+                        string fileExtension = Path.GetExtension(file);
+                        string newFileName = $"{fileNameWithoutExtension}_{count}{fileExtension}";
+
+                        // 继续生成新的文件名，直到找到一个未占用的文件名
+                        while (File.Exists(newFileName))
+                        {
+                            count++;
+                            newFileName = $"{fileNameWithoutExtension}_{count}{fileExtension}";
+                        }
+
+                        file = newFileName;
+                    }
+                    else if (result == VIMessageBox.VIDialogResult.Cancel)
+                    {
+                        return; // 用户取消保存操作
+                    }
+                }
+                VIPlayer player = null;
+                if (!Main.LocalPlayer?.TryGetModPlayer(out player) ?? false)
+                {
+                    return;
+                }
+                TagCompound tag = new();
+                Save(tag, player.vInventory.recipeTasks);
+                TagIO.ToFile(tag, file);
+            }
         }
     }
 }
