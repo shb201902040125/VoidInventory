@@ -50,7 +50,7 @@ namespace VoidInventory.UISupport.UIElements
             Info.TopMargin.Pixel = 5f;
             Info.ButtomMargin.Pixel = 5f;
             Info.IsSensitive = true;
-            Tex = T2D("VoidInventory/UISupport/Asset/VerticalScrollbar");
+            //Tex = T2D("VoidInventory/UISupport/Asset/VerticalScrollbar");
             Tex = T2D("Terraria/Images/UI/Scrollbar");
             innerTex = T2D("Terraria/Images/UI/ScrollbarInner");
             Info.IsHidden = hide;
