@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
+using Terraria.GameContent.UI;
 using Terraria.ModLoader.IO;
 using VoidInventory.Content;
 using VoidInventory.Filters;
@@ -42,14 +43,15 @@ namespace VoidInventory
         {
             if (mergaTask is null && mergaQueue.Count > 0)
             {
-                mergaTask = new(() => Merga_Inner(mergaQueue.Dequeue()));
+                mergaTask = new(() => Merge_Inner(mergaQueue.Dequeue()));
                 mergaTask.Start();
             }
             else
             {
                 tryDelay++;
-                if (tryDelay == 300)
+                if (tryDelay >= VIConfig.normalUpdateCheckTime)
                 {
+                    CombineCurrency();
                     TryFinishRecipeTasks();
                     RefreshTaskUI();
                     tryDelay = 0;
@@ -60,13 +62,13 @@ namespace VoidInventory
         /// 合并物品
         /// </summary>
         /// <param name="item"></param>
-        public void Merga(ref Item item)
+        public void Merge(ref Item item)
         {
             Item toInner = item;
             if (mergaTask is null)
             {
                 //未有合并线程，创建并启动合并线程
-                mergaTask = new(() => Merga_Inner(toInner));
+                mergaTask = new(() => Merge_Inner(toInner));
                 mergaTask.Start();
             }
             else
@@ -76,7 +78,7 @@ namespace VoidInventory
             }
             item = new(ItemID.None);
         }
-        public void Merga_Inner(Item item, bool ignoreRecipe = false)
+        public void Merge_Inner(Item item, bool ignoreRecipe = false)
         {
             Updating = true;
             if (HasItem(item.type, out List<Item> held))
@@ -109,7 +111,7 @@ namespace VoidInventory
             if (mergaQueue.TryDequeue(out Item nextItem))
             {
                 //继续合并
-                Merga_Inner(nextItem);
+                Merge_Inner(nextItem);
             }
             else
             {
@@ -197,9 +199,9 @@ namespace VoidInventory
         }
         /// <summary>
         /// 将背包里所有物品进行合并(以压缩空间)
-        /// 逻辑与<see cref="Merga_Inner(Item, bool)"/>相同
+        /// 逻辑与<see cref="Merge_Inner(Item, bool)"/>相同
         /// </summary>
-        public void MergaAllInInventory()
+        public void MergeAllInInventory()
         {
             Updating = true;
             Dictionary<int, List<Item>> buffer = _items;
@@ -235,7 +237,9 @@ namespace VoidInventory
                     }
                 }
             }
+            CombineCurrency();
             _items.RemoveAll(type => !HasItem(type, out _));
+            TryFinishRecipeTasks();
             RefreshInvUI();
             Updating = false;
         }
@@ -251,7 +255,7 @@ namespace VoidInventory
             {
                 //如果完成了任意一次合成，说明背包物品发生变化，需要重新刷新物块映射并尝试合成
                 task.TryFinish(this, false, out bool reTry, out bool report);
-                if (task.TaskState == 0 && report)
+                if (task.TaskState == 0 && report && VIConfig.enableRecipeTaskReport)
                 {
                     Main.NewText(task.GetReportMessage());
                 }
@@ -290,6 +294,10 @@ namespace VoidInventory
         public bool HasItem(int type, out List<Item> heldItems)
         {
             return _items.TryGetValue(type, out heldItems) && heldItems.Sum(i => i.stack) > 0;
+        }
+        public bool HasItem(int type)
+        {
+            return _items.TryGetValue(type, out var heldItems) && heldItems.Sum(i => i.stack) > 0;
         }
         /// <summary>
         /// 从库存中提出指定类型的物品指定个数，返回是否完全提出成功。并给出提出数和提出物品列表
@@ -376,7 +384,7 @@ namespace VoidInventory
                         _items[item.type] = new() { item };
                     }
                 }
-                MergaAllInInventory();
+                MergeAllInInventory();
             }
             if (tag.TryGet(nameof(recipeTasks), out TagCompound tasktag))
             {
@@ -398,6 +406,205 @@ namespace VoidInventory
                 }
             }
             return false;
+        }
+        internal List<Item> ToList()
+        {
+            List<Item> list = new();
+            foreach (var items in _items.Values)
+            {
+                list.AddRange(items);
+            }
+            return list;
+        }
+        internal void CombineCurrency()
+        {
+            if (HasItem(ItemID.CopperCoin, out List<Item> helItems))
+            {
+                int count = helItems.Sum(i => i.stack);
+                if (count > 100)
+                {
+                    TryPickOut(ItemID.CopperCoin, count - count % 100, out _, out _);
+                    Item item = new(ItemID.SilverCoin, count / 100);
+                    Merge_Inner(item, true);
+                }
+            }
+            if (HasItem(ItemID.SilverCoin, out helItems))
+            {
+                int count = helItems.Sum(i => i.stack);
+                if (count > 100)
+                {
+                    TryPickOut(ItemID.SilverCoin, count - count % 100, out _, out _);
+                    Item item = new(ItemID.GoldCoin, count / 100);
+                    Merge_Inner(item, true);
+                }
+            }
+            if (HasItem(ItemID.GoldCoin, out helItems))
+            {
+                int count = helItems.Sum(i => i.stack);
+                if (count > 100)
+                {
+                    TryPickOut(ItemID.GoldCoin, count - count % 100, out _, out _);
+                    Item item = new(ItemID.PlatinumCoin, count / 100);
+                    Merge_Inner(item, true);
+                }
+            }
+        }
+
+        internal class Hook
+        {
+            static bool loaded;
+            internal static void LoadCurrencyHook()
+            {
+                if (loaded)
+                {
+                    return;
+                }
+                On_Player.CanAfford += On_Player_CanAfford;
+                On_Player.PayCurrency += On_Player_PayCurrency;
+                loaded = true;
+            }
+
+            private static bool On_Player_PayCurrency(On_Player.orig_PayCurrency orig, Player self, long price, int customCurrency)
+            {
+                return BuyItem(self, price, customCurrency, true);
+            }
+
+            private static bool On_Player_CanAfford(On_Player.orig_CanAfford orig, Player self, long price, int customCurrency)
+            {
+                return BuyItem(self, price, customCurrency, false);
+            }
+
+            internal static void UnloadCurrencyHook()
+            {
+                if (!loaded)
+                {
+                    return;
+                }
+                On_Player.CanAfford -= On_Player_CanAfford;
+                On_Player.PayCurrency -= On_Player_PayCurrency;
+                loaded = false;
+            }
+            private static bool BuyItem(Player self, long price, int customCurrency,bool realPay)
+            {
+                Main.NewText("do hook");
+                VInventory inv = self.GetModPlayer<VIPlayer>().vInventory;
+                Dictionary<int, int> valueMap;
+                Dictionary<int, int> itemMap = new();
+                if (customCurrency == -1)
+                {
+                    valueMap = new()
+                    {
+                        { ItemID.PlatinumCoin, 1000000 },
+                        {ItemID.GoldCoin,10000 },
+                        {ItemID.SilverCoin,100 },
+                        {ItemID.CopperCoin,1 }
+                    };
+                }
+                else
+                {
+                    CustomCurrencySystem system = ((Dictionary<int, CustomCurrencySystem>)typeof(CustomCurrencyManager).GetField("_currencies", BindingFlags.Static | BindingFlags.NonPublic).GetValue(null))[customCurrency];
+                    var list = ((Dictionary<int, int>)typeof(CustomCurrencySystem).GetField("_valuePerUnit").GetValue(system)).ToList();
+                    list.Sort((p1, p2) => -p1.Value.CompareTo(p2.Value));
+                    valueMap = new();
+                    list.ForEach(p => valueMap[p.Key] = p.Value);
+                }
+                foreach (int type in valueMap.Keys)
+                {
+                    if (inv.HasItem(type, out var heldItems))
+                    {
+                        itemMap[type] = heldItems.Sum(i => i.stack);
+                    }
+                    else
+                    {
+                        itemMap[type] = 0;
+                    }
+                }
+                Dictionary<int, int> used = new();
+                int HowManyCanUse(int type)
+                {
+                    if (used.ContainsKey(type))
+                    {
+                        return itemMap[type] - used[type];
+                    }
+                    return itemMap[type];
+                }
+                void AddUsed(int type, int amount)
+                {
+                    if (used.ContainsKey(type))
+                    {
+                        used[type] += amount;
+                    }
+                    else
+                    {
+                        used[type] = amount;
+                    }
+                }
+                List<int> types = valueMap.Keys.ToList();
+                for (int index = 0; index < types.Count; index++)
+                {
+                    int type = types[index];
+                    int canUse = HowManyCanUse(type);
+                    int needUse = (int)(price / valueMap[type]);
+                    if (canUse > needUse)
+                    {
+                        price -= (needUse + 1) * valueMap[type];
+                        AddUsed(type, needUse + 1);
+                        goto calculatedChange;
+                    }
+                    else if (canUse == needUse)
+                    {
+                        price -= needUse * valueMap[type];
+                        AddUsed(type, needUse);
+                        if (price == 0)
+                        {
+                            goto successPay;
+                        }
+                    }
+                    else
+                    {
+                        price -= canUse * valueMap[type];
+                        AddUsed(type, canUse);
+                    }
+                }
+                return false;
+            successPay:;
+                if(!realPay)
+                {
+                    return true;
+                }
+                foreach (int type in used.Keys)
+                {
+                    inv.TryPickOut(type, used[type], out _, out _);
+                }
+                inv.MergeAllInInventory();
+                return true;
+            calculatedChange:;
+                if (!realPay)
+                {
+                    return true;
+                }
+                foreach (int type in used.Keys)
+                {
+                    inv.TryPickOut(type, used[type], out _, out _);
+                }
+                price = Math.Abs(price);
+                foreach (int type in valueMap.Keys)
+                {
+                    int count = (int)(price / valueMap[type]);
+                    if (count > 0)
+                    {
+                        Item item = new(type, count);
+                        inv.Merge(ref item);
+                    }
+                    price -= count * valueMap[type];
+                    if (price == 0)
+                    {
+                        break;
+                    }
+                }
+                inv.MergeAllInInventory();
+                return true;
+            }
         }
     }
 }

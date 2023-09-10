@@ -16,3 +16,30 @@ ToLock: Unprotected, click to lock
 Locked: Protected, lick to unlock
 Protect: If locked, this item will not be consumed as a material
 RecipeTaskFinish: Recipe task completed, target item - {0}
+
+Configs: {
+	VIConfig: {
+		DisplayName: Void Inventory Config
+
+		SubstituteVanillaCurrencySystem: {
+			Label: Replace the original currency system
+		}
+
+		GrabItemDirectly: {
+			Label: Merge directly into backpack
+		}
+
+		NormalUpdateCheck: {
+			Label: Cycle maintenance interval
+		}
+
+		EnableReciptTaskReport: {
+			Label: Recipe task completion report
+		}
+
+		SubstituteVanillaCurrencySystem.Tooltip: Use the currency in the expansion backpack for faster calculation and change, but the currency stored in the player's backpack will not be used
+		GrabItemDirectly.Tooltip: If there are similar items in the void backpack, it is preferentially merged directly into the void backpack
+		NormalUpdateCheckTime.Tooltip: "Periodic loop checks are performed to ensure data correctness, value mean seconds"
+		EnableRecipeTaskReport.Tooltip: "A notification will be given in the chat bar when the recipe task is complete"
+	}
+}

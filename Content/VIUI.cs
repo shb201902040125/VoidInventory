@@ -55,7 +55,7 @@ namespace VoidInventory.Content
             {
                 if (Main.mouseItem.type > ItemID.None)
                 {
-                    Main.LocalPlayer.VIP().vInventory.Merga(ref Main.mouseItem);
+                    Main.LocalPlayer.VIP().vInventory.Merge(ref Main.mouseItem);
                 }
             };
             left.Register(leftView);

@@ -57,9 +57,6 @@ namespace VoidInventory
                 }
             }
         }
-        public override void OnEnterWorld()
-        {
-        }
         private static BaseUIElement GetUI(string name) => VoidInventory.Ins.uis.Elements[name];
     }
 }

@@ -176,7 +176,7 @@ namespace VoidInventory
             }
             useList.ForEach(useWhat => ConsumeItems(useWhat, inv));
             Item item = new(RecipeTarget.createItem.type, RecipeTarget.createItem.stack);
-            inv.Merga(ref item);
+            inv.Merge(ref item);
             return true;
         }
 

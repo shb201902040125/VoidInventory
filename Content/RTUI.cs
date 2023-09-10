@@ -55,14 +55,14 @@ namespace VoidInventory.Content
             input.OnInputText += FindRecipe;
             inputbg.Register(input);
 
-            UIText load = new("读取本地备份");
+            UIText load = new("读取");
             load.SetSize(load.TextSize);
             load.SetPos(-inputbg.Width - 20 - load.Width - 20, 20 + 10, 1);
             load.Events.OnUpdate += evt => load.color = load.Info.IsMouseHover ? Color.Gold : Color.White;
             load.Events.OnLeftClick += evt => RecipeTask.ReadFromLocal();
             bg.Register(load);
 
-            UIText save = new("保存本地备份");
+            UIText save = new("保存");
             save.SetSize(save.TextSize);
             save.SetPos(-inputbg.Width - 20 - load.Width - 20 - save.Width - 20, 20 + 10, 1);
             save.Events.OnUpdate += evt => save.color = save.Info.IsMouseHover ? Color.Gold : Color.White;
