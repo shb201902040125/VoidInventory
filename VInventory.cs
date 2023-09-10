@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using log4net.Appender;
+using System.Linq;
 using System.Threading.Tasks;
 using Terraria.GameContent.UI;
 using Terraria.ModLoader.IO;
@@ -144,7 +145,6 @@ namespace VoidInventory
             }
             Updating = false;
         }
-
         internal void RefreshInvUI(Item lastItem = null, Filter<Item, IEnumerable<Item>> filter = null)
         {
             if (Main.dedServ)
@@ -435,6 +435,24 @@ namespace VoidInventory
                 }
             }
         }
+        /// <summary>
+        /// 筛选物品，注意筛选器顺序
+        /// </summary>
+        /// <param name="predicates"></param>
+        /// <returns></returns>
+        internal Dictionary<int, List<Item>> Filter(params Predicate<Item>[] predicates)
+        {
+            Dictionary<int, List<Item>> result = new();
+            foreach (var pair in _items)
+            {
+                result[pair.Key] = pair.Value;
+            }
+            foreach (var predicate in predicates)
+            {
+                result.RemoveAll(list => list.Count == 0 || !predicate(list[0]));
+            }
+            return result;
+        }
 
         internal class Hook
         {
@@ -590,6 +608,55 @@ namespace VoidInventory
                 }
                 inv.MergeAllInInventory();
                 return true;
+            }
+        }
+        internal class Filters
+        {
+            public static Predicate<Item> IsWeapon = i => i.damage > 0;
+            public static Predicate<Item> IsTool = i => i.pick > 0 || i.hammer > 0 || i.axe > 0;
+            public static Predicate<Item> IsPickaxe = i => i.pick > 0;
+            public static Predicate<Item> IsHammer = i => i.hammer > 0;
+            public static Predicate<Item> IsAxe = i => i.axe > 0;
+            public static Predicate<Item> IsArmor => IsEquipAny(EquipType.Head, EquipType.Body, EquipType.Legs);
+            public static Predicate<Item> IsEquipAll(params EquipType[] types)
+            {
+                return i =>
+                {
+                    var att = i.GetType().GetCustomAttribute<AutoloadEquip>();
+                    if (att is null)
+                    {
+                        return false;
+                    }
+                    return types.All(att.equipTypes.Contains);
+                };
+            }
+            public static Predicate<Item> IsEquipAny(params EquipType[] types)
+            {
+                return i =>
+                {
+                    var att = i.GetType().GetCustomAttribute<AutoloadEquip>();
+                    if (att is null)
+                    {
+                        return false;
+                    }
+                    return types.Any(att.equipTypes.Contains);
+                };
+            }
+            public static Predicate<Item> IsPlaceable = i => i.createTile != -1;
+            public static Predicate<Item> IsAccessory = i => i.accessory;
+            public static Predicate<Item> IsAmmo = i => i.ammo != AmmoID.None;
+            //public static Predicate<Item> IsPotion=i=>
+            public static Predicate<Item> IsMatserOrExpert = i => i.master || i.expert;
+            public static Predicate<Item> IsPet = i => Main.lightPet[i.buffType] || Main.projPet[i.buffType] || Main.projPet[i.shoot];
+            public static Predicate<Item> IsMount = i => BuffID.Sets.BasicMountData[i.buffType] is not null;
+            public static Predicate<Item> IsDye = i => i.dye != 0 || i.hairDye != -1;
+            public static Predicate<Item> IsBossSummons = i => ItemID.Sets.SortingPriorityBossSpawns[i.buffType] != 0;
+            public static Predicate<Item> IsConsumable = i => i.consumable;
+            public static Predicate<Item> IsFishing = i => i.questItem || i.fishingPole > 0 || ItemID.Sets.IsFishingCrate[i.type] || ItemID.Sets.IsFishingCrateHardmode[i.type] || RecipeGroup.recipeGroups[RecipeGroupID.FishForDinner].ContainsItem(i.type);
+            public static Predicate<Item> IsMod = i => i.ModItem is not null;
+            public static Predicate<Item> IsModFor(Mod mod)
+            {
+                return i => (i.ModItem?.Mod ?? null) == mod;
             }
         }
     }
