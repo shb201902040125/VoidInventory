@@ -244,6 +244,7 @@ namespace VoidInventory
                 if (reTry)
                 {
                     TryFinishRecipeTasks();
+                    needRefreshInv = true;
                 }
             }
         }

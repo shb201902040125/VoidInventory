@@ -130,7 +130,14 @@ namespace VoidInventory
                 return;
             }
             //统计背包里目标产物个数是否达到
-            if (inv._items.TryGetValue(RecipeTarget.createItem.type, out List<Item> held) && (count = held.Sum(i => i.stack)) >= CountTarget)
+            bool flag = inv._items.TryGetValue(RecipeTarget.createItem.type, out List<Item> held);
+            if (!flag && CountTarget == 0)
+            {
+                finishAtLeastOnce = false;
+                finishAll = true;
+                return;
+            }
+            if (flag && (count = held.Sum(i => i.stack)) >= CountTarget)
             {
                 finishAtLeastOnce = false;
                 finishAll = true;

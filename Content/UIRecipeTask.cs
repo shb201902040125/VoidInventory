@@ -68,12 +68,13 @@ namespace VoidInventory.Content
             func.Events.OnLeftClick += evt =>
             {
                 RT.Stopping = !RT.Stopping;
-                state.color = RT.Stopping ? G : R;
+                state.color = RT.Stopping ? R : G;
             };
             func.Events.OnRightClick += evt =>
             {
                 RT.SetStateWithDefault(RT.TaskState + 1 > 2 ? 0 : (RT.TaskState + 1));
-
+                RT.Stopping = true;
+                state.color = R;
                 func.ChangeText(GTV($"Func.{RT.TaskState}"));
             };
             func.Events.OnMouseOver += evt => func.color = R;
