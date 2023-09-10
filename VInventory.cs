@@ -173,7 +173,7 @@ namespace VoidInventory
         }
         internal void RefreshTaskUI()
         {
-            if (Main.dedServ)
+            /*if (Main.dedServ)
             {
                 return;
             }
@@ -195,7 +195,7 @@ namespace VoidInventory
                 task.SetSize(-20, 52, 1);
                 task.SetPos(10, 10 + (i * 62));
                 ui.leftView.AddElement(task);
-            }
+            }*/
         }
         /// <summary>
         /// 将背包里所有物品进行合并(以压缩空间)

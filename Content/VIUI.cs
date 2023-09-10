@@ -60,9 +60,7 @@ namespace VoidInventory.Content
             };
             left.Register(leftView);
 
-            VerticalScrollbar leftscroll = new(62);
-            leftscroll.Info.IsHidden = true;
-            leftscroll.Info.Left.Pixel += 10;
+            VerticalScrollbar leftscroll = new(62 * 3);
             leftView.SetVerticalScrollbar(leftscroll);
             left.Register(leftscroll);
 
@@ -72,12 +70,9 @@ namespace VoidInventory.Content
             bg.Register(right);
 
             rightView = new();
-            rightView.Info.SetMargin(0);
             right.Register(rightView);
 
-            VerticalScrollbar rightscroll = new(62);
-            rightscroll.Info.IsHidden = true;
-            rightscroll.Info.Left.Pixel += 10;
+            VerticalScrollbar rightscroll = new(62 * 3);
             rightView.SetVerticalScrollbar(rightscroll);
             right.Register(rightscroll);
         }

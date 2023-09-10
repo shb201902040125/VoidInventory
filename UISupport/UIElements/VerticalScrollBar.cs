@@ -1,5 +1,4 @@
-﻿using Ionic.Zip;
-using Microsoft.Xna.Framework.Input;
+﻿using Microsoft.Xna.Framework.Input;
 
 namespace VoidInventory.UISupport.UIElements
 {
@@ -7,8 +6,10 @@ namespace VoidInventory.UISupport.UIElements
     {
         private readonly Texture2D Tex;
         private readonly Texture2D innerTex;
-        private UIImage bar;
+        private Rectangle InnerRec;
         private float mouseY;
+        private float innerY;
+        private Vector2 mapping;
         private float realWheelValue;
         public int? WheelPixel;
         public float RealWheelValue
@@ -25,12 +26,11 @@ namespace VoidInventory.UISupport.UIElements
             get => waitToWheelValue;
             set => waitToWheelValue = Math.Clamp(value, 0, 1);
         }
-        private bool hide;
         public bool UseScrollWheel = true;
-        private (int, int)[] scissor;
-        private int scissorH;
+        private int scissor;
         public UIContainerPanel View { get; set; }
         public float ViewMovableY => View.MovableSize.Y;
+        private float oldMovableY;
 
         public float WheelValue
         {
@@ -41,7 +41,7 @@ namespace VoidInventory.UISupport.UIElements
             }
         }
 
-        public VerticalScrollbar(int? wheelPixel = 52, float wheelValue = 0f, bool hide = false)
+        public VerticalScrollbar(int? wheelPixel = 52, float wheelValue = 0f)
         {
             Info.Width.Set(20f, 0f);
             Info.Left.Set(-20f, 1f);
@@ -52,21 +52,21 @@ namespace VoidInventory.UISupport.UIElements
             Info.IsSensitive = true;
             //Tex = T2D("VoidInventory/UISupport/Asset/VerticalScrollbar");
             Tex = T2D("Terraria/Images/UI/Scrollbar");
-            innerTex = T2D("Terraria/Images/UI/ScrollbarInner");
-            Info.IsHidden = hide;
+            innerTex = T2D("VoidInventory/UISupport/Asset/ScrollbarInner");
             WheelPixel = wheelPixel;
             WheelValue = wheelValue;
-            this.hide = hide;
-            SetScissor(12);
+            SetScissor(6);
         }
-        public void SetScissor(int height)
+        public void SetScissor(int scissor) => this.scissor = scissor;
+        public override void OnInitialization()
         {
-            int h = Tex.Height;
-            scissor = new (int, int)[3];
-            scissor[0] = (0, height);
-            scissor[1] = (height, h - height);
-            scissor[2] = (h - height, h);
-            scissorH = height;
+            base.OnInitialization();
+            Calculation();
+            InnerRec = HitBox(false);
+        }
+        public void CalculateBarLength()
+        {
+            InnerRec.Height = (int)(InnerHeight * (InnerHeight / (ViewMovableY + InnerHeight)));
         }
         public override void LoadEvents()
         {
@@ -76,25 +76,35 @@ namespace VoidInventory.UISupport.UIElements
                 if (!isMouseDown)
                 {
                     isMouseDown = true;
+                    int recH = InnerRec.Height;
+                    int my = Main.mouseY;
+                    int top = InnerTop;
+                    if (!InnerRec.Contains(Main.MouseScreen.ToPoint()))
+                    {
+                        if (my < top + recH / 2f)
+                        {
+                            innerY = my - top;
+                        }
+                        else if (my > InnerBottom - recH / 2f)
+                        {
+                            innerY = my - (InnerBottom - recH);
+                        }
+                        else
+                        {
+                            innerY = recH / 2f;
+                        }
+                    }
+                    else
+                    {
+                        innerY = my - InnerRec.Y;
+                    }
+                    mapping = new(top + innerY, top + InnerHeight - recH + innerY);
                 }
             };
             Events.OnLeftUp += element =>
             {
                 isMouseDown = false;
             };
-        }
-
-        public override void OnInitialization()
-        {
-            base.OnInitialization();
-            //_texture = Main.Assets.Request<Texture2D>("Images/UI/Scrollbar");
-            //_innerTexture = Main.Assets.Request<Texture2D>("Images/UI/ScrollbarInner");
-            bar = new UIImage(T2D("VoidInventory/UISupport/Asset/VerticalScrollbarInner"), 16, 26);
-            //bar = new UIImage(T2D("Terraria/Images/UI/Scrollbar"), 16, 26);
-            bar.Info.Left.Pixel = -(bar.Info.Width.Pixel - Info.Width.Pixel) / 2f;
-            bar.ChangeColor(Color.White * alpha);
-            bar.Info.IsHidden = hide;
-            Register(bar);
         }
 
         public override void Update(GameTime gt)
@@ -115,8 +125,6 @@ namespace VoidInventory.UISupport.UIElements
                 alpha -= 0.04f;
             }
 
-            bar.ChangeColor(Color.White * alpha);
-
             MouseState state = Mouse.GetState();
             float height = Info.Size.Y - 26f;
             if (!isMouseHover)
@@ -134,71 +142,59 @@ namespace VoidInventory.UISupport.UIElements
                 {
                     WheelValue -= (state.ScrollWheelValue - whell) / 6f / height;
                 }
-
                 whell = state.ScrollWheelValue;
             }
-            if (isMouseDown && mouseY != Main.mouseY)
+            if (isMouseDown && mouseY != Main.mouseY && ViewMovableY > 0)
             {
-                WheelValue = (Main.mouseY - Info.Location.Y - 13f) / height;
+                WheelValue = Utils.GetLerpValue(mapping.X, mapping.Y, Main.mouseY, true);
                 mouseY = Main.mouseY;
             }
 
-            bar.Info.Top.Pixel = Math.Max(0, WheelValue * height);
             RealWheelValue = (Math.Clamp(WaitToWhellValue - RealWheelValue, -1, 1) / 6f) + RealWheelValue;
             if ((int)(WaitToWhellValue * 100) / 100f != (int)(RealWheelValue * 100) / 100f)
             {
+                if (Math.Abs(RealWheelValue - WaitToWhellValue) < 0.02f)
+                {
+                    ForceWheel(WaitToWhellValue);
+                }
                 Calculation();
             }
         }
-        public void UpdateBarValue()
+        public override void Calculation()
         {
-            bar.Info.Height.Pixel = Height * Height / Math.Max(Height, ViewMovableY);
-            bar.Calculation();
+            base.Calculation();
+            CalculateBarLength();
+            if (oldMovableY != ViewMovableY)
+            {
+                float newValue;
+                try
+                {
+                    newValue = ViewMovableY / oldMovableY;
+                }
+                catch
+                {
+                    WheelValue = 0;
+                    return;
+                }
+                ForceWheel(WheelValue / newValue);
+                oldMovableY = ViewMovableY;
+            }
+            InnerRec = InnerRec.Order(InnerLeft, InnerTop + (int)(WheelValue * (InnerHeight - InnerRec.Height)));
         }
-
+        public void ForceWheel(float value)
+        {
+            waitToWheelValue = realWheelValue = Math.Clamp(value, 0, 1);
+        }
         public override void DrawSelf(SpriteBatch sb)
         {
-            /*sb.Draw(Tex, new Rectangle(Info.HitBox.X + ((Info.HitBox.Width - Tex.Width) / 2),
-                Info.HitBox.Y - 12, Tex.Width, 12),
-                new Rectangle(0, 0, Tex.Width, 12), Color.White * alpha);
-
-            sb.Draw(Tex, new Rectangle(Info.HitBox.X + ((Info.HitBox.Width - Tex.Width) / 2),
-                Info.HitBox.Y, Tex.Width, Info.HitBox.Height),
-                new Rectangle(0, 12, Tex.Width, Tex.Height - 24), Color.White * alpha);
-
-            sb.Draw(Tex, new Rectangle(Info.HitBox.X + ((Info.HitBox.Width - Tex.Width) / 2),
-                Info.HitBox.Y + Info.HitBox.Height, Tex.Width, 12),
-                new Rectangle(0, Tex.Height - 12, Tex.Width, 12), Color.White * alpha);*/
             DrawBar(sb, Tex, HitBox(), Color.White);
+            DrawBar(sb, innerTex, InnerRec, Color.White);
         }
-        internal void DrawBar(SpriteBatch spriteBatch, Texture2D texture, Rectangle rec, Color color)
+        private void DrawBar(SpriteBatch spriteBatch, Texture2D tex, Rectangle rec, Color color)
         {
-            spriteBatch.Draw(texture, new Rectangle(rec.X, rec.Y - 6, rec.Width, 6), new Rectangle(0, 0, texture.Width, 6), color);
-            spriteBatch.Draw(texture, new Rectangle(rec.X, rec.Y, rec.Width, rec.Height), new Rectangle(0, 6, texture.Width, 4), color);
-            spriteBatch.Draw(texture, new Rectangle(rec.X, rec.Y + rec.Height, rec.Width, 6), new Rectangle(0, texture.Height - 6, texture.Width, 6), color);
+            spriteBatch.Draw(tex, new Rectangle(rec.X, rec.Y - scissor, rec.Width, scissor), new Rectangle(0, 0, tex.Width, scissor), color);
+            spriteBatch.Draw(tex, new Rectangle(rec.X, rec.Y, rec.Width, rec.Height), new Rectangle(0, scissor, tex.Width, tex.Height - 2 * scissor), color);
+            spriteBatch.Draw(tex, new Rectangle(rec.X, rec.Y + rec.Height, rec.Width, scissor), new Rectangle(0, tex.Height - scissor, tex.Width, scissor), color);
         }
-        private Rectangle GetHandleRectangle(Rectangle rec)
-        {
-            float percent = Height / Math.Max(Height, ViewMovableY);
-            return new Rectangle(rec.X, rec.Y + (int)(rec.Height * WheelValue) - 3, 20, (int)(rec.Height * percent) + 7);
-        }
-
-        /*void D(SpriteBatch spriteBatch)
-        {
-            CalculatedStyle dimensions = GetDimensions();
-            CalculatedStyle innerDimensions = GetInnerDimensions();
-            if (_isDragging)
-            {
-                float num = UserInterface.ActiveInstance.MousePosition.Y - innerDimensions.Y - _dragYOffset;
-                _viewPosition = MathHelper.Clamp(num / innerDimensions.Height * _maxViewSize, 0f, _maxViewSize - _viewSize);
-            }
-
-            Rectangle handleRectangle = GetHandleRectangle();
-            Vector2 mousePosition = UserInterface.ActiveInstance.MousePosition;
-            bool isHoveringOverHandle = _isHoveringOverHandle;
-            _isHoveringOverHandle = handleRectangle.Contains(new Point((int)mousePosition.X, (int)mousePosition.Y));
-            if (!isHoveringOverHandle && _isHoveringOverHandle && Main.hasFocus)
-                SoundEngine.PlaySound(12);
-        }*/
     }
 }

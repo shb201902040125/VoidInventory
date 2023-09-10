@@ -688,6 +688,14 @@
         public int Height => HitBox().Height;
         public int Left => HitBox().Left;
         public int Top => HitBox().Top;
+        public int Right => HitBox().Right;
+        public int Bottom => HitBox().Bottom;
+        public int InnerWidth => HitBox(false).Width;
+        public int InnerHeight => HitBox(false).Height;
+        public int InnerLeft => HitBox(false).Left;
+        public int InnerTop => HitBox(false).Top;
+        public int InnerRight => HitBox(false).Right;
+        public int InnerBottom => HitBox(false).Bottom;
 
         public void SetPos(float x, float y, float Xpercent = 0, float Ypercent = 0)
         {
