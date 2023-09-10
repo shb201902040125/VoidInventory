@@ -23,23 +23,17 @@ Configs: {
 
 		SubstituteVanillaCurrencySystem: {
 			Label: 替代原版货币系统
+			Tooltip: 使用扩展背包内的货币进行更快的计算并支持找零，但玩家背包等储存的货币将无法被使用
 		}
 
 		GrabItemDirectly: {
 			Label: 直接合并到背包
+			Tooltip: 如果虚空背包存在掉落物同类物品，则优先直接合并到虚空背包
 		}
 
-		NormalUpdateCheck: {
-			Label: 循环维护间隔
-		}
-
-		EnableReciptTaskReport: {
-			Label: 合成任务完成时报告
-		}
-		
-		SubstituteVanillaCurrencySystem.Tooltip: 使用扩展背包内的货币进行更快的计算并支持找零，但玩家背包等储存的货币将无法被使用
-		GrabItemDirectly.Tooltip: 如果虚空背包存在掉落物同类物品，则优先直接合并到虚空背包
-		NormalUpdateCheckTime.Tooltip: "虚空背包会定时进行循环检测，以确保数据正确性，单位秒"
-		EnableRecipeTaskReport.Tooltip: "合成任务完成时将会在聊天栏进行提醒"
+		NormalUpdateCheck.Label: 循环维护间隔
+		EnableReciptTaskReport.Label: 合成任务完成时报告
+		NormalUpdateCheckTime.Tooltip: 虚空背包会定时进行循环检测，以确保数据正确性，单位秒
+		EnableRecipeTaskReport.Tooltip: 合成任务完成时将会在聊天栏进行提醒
 	}
 }

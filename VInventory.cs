@@ -51,8 +51,8 @@ namespace VoidInventory
                 tryDelay++;
                 if (tryDelay >= VIConfig.normalUpdateCheckTime)
                 {
-                    CombineCurrency();
                     TryFinishRecipeTasks();
+                    CombineCurrency();
                     RefreshTaskUI();
                     tryDelay = 0;
                 }
@@ -173,29 +173,11 @@ namespace VoidInventory
         }
         internal void RefreshTaskUI()
         {
-            /*if (Main.dedServ)
-            {
-                return;
-            }
             RTUI ui = VoidInventory.Ins.uis.Elements[RTUI.NameKey] as RTUI;
-            if (!ui.Info.IsVisible)
+            if (ui is not null && ui.leftView is not null)
             {
-                return;
+                ui.LoadRT();
             }
-
-            UIRecipeTask task;
-            ui.leftView.ClearAllElements();
-            int count = recipeTasks.Count;
-            for (int i = 0; i < count; i++)
-            {
-                task = new(recipeTasks[i])
-                {
-                    id = i
-                };
-                task.SetSize(-20, 52, 1);
-                task.SetPos(10, 10 + (i * 62));
-                ui.leftView.AddElement(task);
-            }*/
         }
         /// <summary>
         /// 将背包里所有物品进行合并(以压缩空间)
@@ -237,9 +219,9 @@ namespace VoidInventory
                     }
                 }
             }
-            CombineCurrency();
             _items.RemoveAll(type => !HasItem(type, out _));
             TryFinishRecipeTasks();
+            CombineCurrency();
             RefreshInvUI();
             Updating = false;
         }

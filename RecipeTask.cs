@@ -92,14 +92,21 @@ namespace VoidInventory
             if (CountTarget > 0)
             {
                 //合成成功，完成一次标记为true，全部完成判断次数需求是否到0
+                int times = 0;
                 while (DoRecipe(inv))
                 {
+                    times++;
                     finishAtLeastOnce = true;
                     finishAll = --CountTarget == 0;
                     if (finishAll)
                     {
-                        return;
+                        break;
                     }
+                }
+                if (times > 0)
+                {
+                    Item item = new(RecipeTarget.createItem.type, times * RecipeTarget.createItem.stack);
+                    inv.Merge(ref item);
                 }
             }
         }
@@ -122,15 +129,22 @@ namespace VoidInventory
             }
             finishAtLeastOnce = false;
             finishAll = false;
+            int times = 0;
             while (DoRecipe(inv))
             {
+                times++;
                 count++;
                 finishAtLeastOnce = true;
                 finishAll = count == CountTarget;
                 if (finishAll)
                 {
-                    return;
+                    break;
                 }
+            }
+            if (times > 0)
+            {
+                Item item = new(RecipeTarget.createItem.type, times * RecipeTarget.createItem.stack);
+                inv.Merge(ref item);
             }
         }
 
@@ -144,9 +158,16 @@ namespace VoidInventory
             }
             finishAtLeastOnce = false;
             finishAll = false;
+            int times = 0;
             while (DoRecipe(inv))
             {
+                times++;
                 finishAtLeastOnce = true;
+            }
+            if (times > 0)
+            {
+                Item item = new(RecipeTarget.createItem.type, times * RecipeTarget.createItem.stack);
+                inv.Merge(ref item);
             }
         }
 
@@ -175,8 +196,6 @@ namespace VoidInventory
                 }
             }
             useList.ForEach(useWhat => ConsumeItems(useWhat, inv));
-            Item item = new(RecipeTarget.createItem.type, RecipeTarget.createItem.stack);
-            inv.Merge(ref item);
             return true;
         }
 
