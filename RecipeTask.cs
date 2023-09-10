@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using System.Linq;
+using System.Runtime.Loader;
 using System.Windows.Forms;
 using Terraria.ModLoader.IO;
 
@@ -439,88 +440,41 @@ namespace VoidInventory
         {
             return string.Format(GTV($"RecipeTaskFinish"), Lang.GetItemNameValue(RecipeTarget.createItem.type));
         }
-        internal static void OpenToRead()
+        internal static void ReadFromLocal()
         {
-            Main.NewText("Do Open To Read");
-            Assembly assembly = Assembly.Load(VoidInventory.Ins.GetFileBytes("lib/System.Windows.Forms.dll"));
-            dynamic fileDialog = assembly.GetType("OpenFileDialog").GetType().GetConstructor(Array.Empty<Type>());
-            fileDialog.Filter = "VI保存文件|*.vif|所有文件|*.*";
-            fileDialog.Title = "选择RecipeTask保存文件";
-            if (fileDialog.ShowDialog().ToString() == "OK")
+            string file = Path.Combine(Main.SavePath, "Mods", "VoidInventory", "RTS.vif");
+            if (File.Exists(file))
             {
-                string file = fileDialog.FileName;
-                if (File.Exists(file))
+                try
                 {
-                    TagCompound tag = null;
-                    try
+                    TagCompound tag = TagIO.FromFile(file);
+                    VIPlayer player = null;
+                    if (!Main.LocalPlayer?.TryGetModPlayer(out player) ?? false)
                     {
-                        tag = TagIO.FromFile(file);
-                        VIPlayer player = null;
-                        if(!Main.LocalPlayer?.TryGetModPlayer(out player)??false)
-                        {
-                            fileDialog.Dispose();
-                            return;
-                        }
-                        player.vInventory.recipeTasks.AddRange(Load(tag));
-                        player.vInventory.RefreshTaskUI();
-                    }
-                    catch
-                    {
-                        Main.NewText("此文件非可解读保存文件.可能是数据损坏");
-                        fileDialog.Dispose();
                         return;
                     }
+                    player.vInventory.recipeTasks.AddRange(Load(tag));
+                    player.vInventory.RefreshTaskUI();
+                }
+                catch (Exception ex)
+                {
+                    VoidInventory.Ins.Logger.Error(ex);
                 }
             }
-            fileDialog.Dispose();
         }
-        internal static void OpenToSave()
+        internal static void SaveToLocal()
         {
-            Main.NewText("Do Open To Save");
-            Assembly assembly = Assembly.Load(VoidInventory.Ins.GetFileBytes("lib/System.Windows.Forms.dll"));
-            dynamic fileDialog = assembly.GetType("OpenFileDialog").GetType().GetConstructor(Array.Empty<Type>());
-            fileDialog.Filter = "VI保存文件|*.vif|所有文件|*.*";
-            if (fileDialog.ShowDialog().ToString() == "OK")
+            string file = Path.Combine(Main.SavePath, "Mods", "VoidInventory");
+            Directory.CreateDirectory(file);
+            file = Path.Combine(file, "RTS.vif");
+            VIPlayer player = null;
+            if (!Main.LocalPlayer?.TryGetModPlayer(out player) ?? false)
             {
-                string file = fileDialog.FileName;
-                if (File.Exists(file))
-                {
-                    var result = VIMessageBox.Show("文件已存在。要更改文件名吗？", "文件已存在", VIMessageBox.VIMessageBoxButtons.YesNoCancel, VIMessageBox.VIMessageBoxIcon.Warning);
-
-                    if (result == VIMessageBox.VIDialogResult.Yes)
-                    {
-                        // 生成一个新的文件名（例如，在文件名后面添加数字）
-                        int count = 1;
-                        string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(file);
-                        string fileExtension = Path.GetExtension(file);
-                        string newFileName = $"{fileNameWithoutExtension}_{count}{fileExtension}";
-
-                        // 继续生成新的文件名，直到找到一个未占用的文件名
-                        while (File.Exists(newFileName))
-                        {
-                            count++;
-                            newFileName = $"{fileNameWithoutExtension}_{count}{fileExtension}";
-                        }
-
-                        file = newFileName;
-                    }
-                    else if (result == VIMessageBox.VIDialogResult.Cancel)
-                    {
-                        fileDialog.Dispose();
-                        return; // 用户取消保存操作
-                    }
-                }
-                VIPlayer player = null;
-                if (!Main.LocalPlayer?.TryGetModPlayer(out player) ?? false)
-                {
-                    fileDialog.Dispose();
-                    return;
-                }
-                TagCompound tag = new();
-                Save(tag, player.vInventory.recipeTasks);
-                TagIO.ToFile(tag, file);
+                return;
             }
-            fileDialog.Dispose();
+            TagCompound tag = new();
+            Save(tag, player.vInventory.recipeTasks);
+            TagIO.ToFile(tag, file);
         }
     }
 }
