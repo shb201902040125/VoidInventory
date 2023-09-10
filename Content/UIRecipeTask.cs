@@ -62,7 +62,7 @@ namespace VoidInventory.Content
 
             x += 5 + add.Width;
 
-            UIText func = new(GTV("Func.0"), drawStyle: 0);
+            UIText func = new(GTV($"Func.{RT.TaskState}"), drawStyle: 0);
             func.SetSize(func.TextSize);
             func.SetPos(x, font.LineSpacing + 3);
             func.Events.OnLeftClick += evt =>
@@ -72,10 +72,7 @@ namespace VoidInventory.Content
             };
             func.Events.OnRightClick += evt =>
             {
-                if (++RT.TaskState > 2)
-                {
-                    RT.TaskState = 0;
-                }
+                RT.SetStateWithDefault(RT.TaskState + 1 > 2 ? 0 : (RT.TaskState + 1));
 
                 func.ChangeText(GTV($"Func.{RT.TaskState}"));
             };
@@ -140,7 +137,7 @@ namespace VoidInventory.Content
             ref int target = ref RT.CountTarget;
             if (timer++ % frame == 0)
             {
-                target = RT.TaskState == 0 ? Math.Max(0, target + count) : Math.Clamp(target + count, 0, 9999);
+                target = RT.TaskState == 0 ? Math.Max(0, target + count) : (RT.TaskState == 1 ? Math.Clamp(target + count, 0, 9999) : -1);
             }
         }
         public override void DrawSelf(SpriteBatch sb)

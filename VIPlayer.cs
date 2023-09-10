@@ -1,4 +1,5 @@
-﻿using Terraria.GameInput;
+﻿using Microsoft.Build.Locator;
+using Terraria.GameInput;
 using Terraria.ModLoader.IO;
 using VoidInventory.Content;
 
@@ -48,11 +49,11 @@ namespace VoidInventory
                     VInventory inv = Main.LocalPlayer.GetModPlayer<VIPlayer>().vInventory;
                     if (vi)
                     {
-                        inv.RefreshInvUI();
+                        VInventory.needRefreshInv = true;
                     }
                     else
                     {
-                        inv.RefreshTaskUI();
+                        VInventory.needRefreshRT = true;
                     }
                 }
             }

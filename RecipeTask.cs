@@ -29,6 +29,15 @@ namespace VoidInventory
         /// <br>2:始终制作</br>
         /// </summary>
         public int TaskState = 0;
+        public void SetStateWithDefault(int state)
+        {
+            if (state < 0 || state > 2)
+            {
+                return;
+            }
+            TaskState = state;
+            CountTarget = state == 0 ? 1 : (state == 1 ? 10 : -1);
+        }
         public int CountTarget;
         internal Dictionary<int, Dictionary<int, bool>> exclude = new();
         public RecipeTask(Recipe recipe, int state = 0, int count = 10)
@@ -133,9 +142,9 @@ namespace VoidInventory
             while (DoRecipe(inv))
             {
                 times++;
-                count++;
+                count += RecipeTarget.createItem.stack;
                 finishAtLeastOnce = true;
-                finishAll = count == CountTarget;
+                finishAll = count >= CountTarget;
                 if (finishAll)
                 {
                     break;
@@ -374,7 +383,7 @@ namespace VoidInventory
         }
         public static List<RecipeTask> Load(TagCompound tag)
         {
-            if (tag.TryGet<byte[]>("RTS", out byte[] data))
+            if (tag.TryGet("RTS", out byte[] data))
             {
                 Dictionary<string, Recipe> rs = new();
                 Dictionary<string, int> rgs = new();
@@ -406,7 +415,7 @@ namespace VoidInventory
                 string checkcode = reader.ReadString();
                 int state = reader.ReadInt32();
                 int countTarget = reader.ReadInt32();
-                bool stoppint = reader.ReadBoolean();
+                bool stopping = reader.ReadBoolean();
                 int excludeCount = reader.ReadInt32();
                 Dictionary<int, Dictionary<int, bool>> exclude = new();
                 for (int j = 0; j < excludeCount; j++)
@@ -434,7 +443,7 @@ namespace VoidInventory
                     {
                         TaskState = state,
                         CountTarget = countTarget,
-                        Stopping = stoppint,
+                        Stopping = stopping,
                         exclude = exclude
                     };
                     foreach (int trg in task.RecipeTarget.acceptedGroups)
@@ -473,7 +482,7 @@ namespace VoidInventory
                         return;
                     }
                     player.vInventory.recipeTasks.AddRange(Load(tag));
-                    player.vInventory.RefreshTaskUI();
+                    VInventory.needRefreshRT = true;
                 }
                 catch (Exception ex)
                 {

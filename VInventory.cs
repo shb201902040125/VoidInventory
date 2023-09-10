@@ -21,6 +21,7 @@ namespace VoidInventory
         private Queue<Item> mergaQueue = new();
         private Dictionary<int, int> tileMap = new();
         internal bool HasWater, HasLava, HasHoney, HasShimmer;
+        internal static bool needRefreshInv, needRefreshRT;
         static VInventory()
         {
         }
@@ -49,13 +50,22 @@ namespace VoidInventory
             else
             {
                 tryDelay++;
-                if (tryDelay >= VIConfig.normalUpdateCheckTime)
+                if (tryDelay >= VIConfig.normalUpdateCheckTime * 60)
                 {
                     TryFinishRecipeTasks();
                     CombineCurrency();
-                    RefreshTaskUI();
                     tryDelay = 0;
                 }
+            }
+            if(needRefreshInv)
+            {
+                needRefreshInv = false;
+                RefreshInvUI();
+            }
+            if(needRefreshRT)
+            {
+                needRefreshRT = false;
+                RefreshTaskUI();
             }
         }
         /// <summary>
@@ -65,18 +75,24 @@ namespace VoidInventory
         public void Merge(ref Item item)
         {
             Item toInner = item;
-            if (mergaTask is null)
-            {
-                //未有合并线程，创建并启动合并线程
-                mergaTask = new(() => Merge_Inner(toInner));
-                mergaTask.Start();
-            }
-            else
-            {
-                //已有合并线程，添加到任务队列
-                mergaQueue.Enqueue(toInner);
-            }
+            Merge_Inner(toInner);
             item = new(ItemID.None);
+            //Item toInner = item;
+            //if (mergaTask is null)
+            //{
+            //    //未有合并线程，创建并启动合并线程
+            //    mergaTask = new(() => Merge_Inner(toInner));
+            //    mergaTask.Start();
+            //}
+            //else
+            //{
+            //    //已有合并线程，添加到任务队列
+            //    lock (mergaQueue)
+            //    {
+            //        mergaQueue.Enqueue(toInner);
+            //    }
+            //}
+            //item = new(ItemID.None);
         }
         public void Merge_Inner(Item item, bool ignoreRecipe = false)
         {
@@ -124,7 +140,7 @@ namespace VoidInventory
                 mergaTask = null;
                 tryDelay = 0;
                 //进行刷新UI的回调
-                RefreshInvUI(item);
+                needRefreshInv = true;
             }
             Updating = false;
         }
@@ -135,23 +151,6 @@ namespace VoidInventory
             {
                 return;
             }
-            //currentFilter = filter ?? currentFilter;
-            //List<Item> forUI = new();
-            //if (currentFilter is null)
-            //{
-            //    foreach (KeyValuePair<int, List<Item>> items in _items)
-            //    {
-            //        forUI.AddRange(items.Value);
-            //    }
-            //}
-            //else
-            //{
-            //    foreach (KeyValuePair<int, List<Item>> pair in _items)
-            //    {
-            //        forUI.AddRange(currentFilter.FilterItems(pair.Value));
-            //    }
-            //}
-            //用forUI刷新UI界面
             VIUI ui = VoidInventory.Ins.uis.Elements[VIUI.NameKey] as VIUI;
             UIItemTex tex;
             ui.leftView.ClearAllElements();
@@ -222,7 +221,8 @@ namespace VoidInventory
             _items.RemoveAll(type => !HasItem(type, out _));
             TryFinishRecipeTasks();
             CombineCurrency();
-            RefreshInvUI();
+            needRefreshInv = true;
+            needRefreshRT = true;
             Updating = false;
         }
 
@@ -371,7 +371,7 @@ namespace VoidInventory
             if (tag.TryGet(nameof(recipeTasks), out TagCompound tasktag))
             {
                 recipeTasks = RecipeTask.Load(tasktag);
-                RefreshTaskUI();
+                needRefreshRT = true;
             }
         }
         internal bool CountTile(int countNeed, params int[] tileNeeds)
@@ -408,6 +408,7 @@ namespace VoidInventory
                     TryPickOut(ItemID.CopperCoin, count - count % 100, out _, out _);
                     Item item = new(ItemID.SilverCoin, count / 100);
                     Merge_Inner(item, true);
+                    needRefreshInv = true;
                 }
             }
             if (HasItem(ItemID.SilverCoin, out helItems))
@@ -418,6 +419,7 @@ namespace VoidInventory
                     TryPickOut(ItemID.SilverCoin, count - count % 100, out _, out _);
                     Item item = new(ItemID.GoldCoin, count / 100);
                     Merge_Inner(item, true);
+                    needRefreshInv = true;
                 }
             }
             if (HasItem(ItemID.GoldCoin, out helItems))
@@ -428,6 +430,7 @@ namespace VoidInventory
                     TryPickOut(ItemID.GoldCoin, count - count % 100, out _, out _);
                     Item item = new(ItemID.PlatinumCoin, count / 100);
                     Merge_Inner(item, true);
+                    needRefreshInv = true;
                 }
             }
         }
