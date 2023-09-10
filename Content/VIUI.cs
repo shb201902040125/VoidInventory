@@ -14,6 +14,7 @@ namespace VoidInventory.Content
         public override void OnInitialization()
         {
             base.OnInitialization();
+            if (Main.gameMenu) return;
             RemoveAll();
             bg = new(800, 600);
             bg.SetCenter(0, 0, 0.5f, 0.5f);
@@ -49,6 +50,34 @@ namespace VoidInventory.Content
             left.SetPos(20, 82);
             bg.Register(left);
 
+            UIPanel fbg = new(10 + 10 * 35, 40);
+            fbg.Info.SetMargin(5);
+            fbg.SetPos(20, 82);
+            bg.Register(fbg);
+
+            for (int i = 0; i < 10; i++)
+            {
+                UIItemFilter filters = new(i, this);
+                filters.SetPos(i * 35, 0);
+                filters.Events.OnLeftDown += evt =>
+                {
+                    fbg.Info.IsVisible = false;
+                    left.Info.IsVisible = true;
+                };
+                fbg.Register(filters);
+            }
+            fbg.Info.IsVisible = false;
+
+            UIText filter = new("筛选");
+            filter.SetSize(filter.TextSize);
+            filter.SetPos(20, 42);
+            filter.Events.OnLeftClick += evt =>
+            {
+                fbg.Info.IsVisible = !fbg.Info.IsVisible;
+                left.Info.IsVisible = false;
+            };
+            bg.Register(filter);
+
             leftView = new();
             leftView.Info.SetMargin(0);
             leftView.Events.OnLeftClick += evt =>
@@ -79,7 +108,7 @@ namespace VoidInventory.Content
         public void SortLeft()
         {
             int count = 0;
-            foreach (UIItemTex item in leftView.InnerUIE.Cast<UIItemTex>())
+            foreach (UIItemTex item in Items)
             {
                 item.SetPos((count % 6 * 56) + 10, (count / 6 * 56) + 10);
                 count++;
@@ -124,10 +153,6 @@ namespace VoidInventory.Content
                 focusType = type;
                 SortRight(targetItems);
             };
-        }
-        private void FindInvItem()
-        {
-
         }
     }
 }

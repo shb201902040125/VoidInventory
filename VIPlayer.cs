@@ -30,6 +30,7 @@ namespace VoidInventory
                 if (!r.firstLoad)
                 {
                     r.OnInitialization();
+                    v.OnInitialization();
                     v.leftView.ClearAllElements();
                     foreach (int item in vInventory._items.Keys)
                     {

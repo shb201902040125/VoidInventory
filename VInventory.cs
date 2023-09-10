@@ -1,5 +1,4 @@
-﻿using log4net.Appender;
-using System.Linq;
+﻿using System.Linq;
 using System.Threading.Tasks;
 using Terraria.GameContent.UI;
 using Terraria.ModLoader.IO;
@@ -58,12 +57,12 @@ namespace VoidInventory
                     tryDelay = 0;
                 }
             }
-            if(needRefreshInv)
+            if (needRefreshInv)
             {
                 needRefreshInv = false;
                 RefreshInvUI();
             }
-            if(needRefreshRT)
+            if (needRefreshRT)
             {
                 needRefreshRT = false;
                 RefreshTaskUI();
@@ -152,8 +151,9 @@ namespace VoidInventory
                 return;
             }
             VIUI ui = VoidInventory.Ins.uis.Elements[VIUI.NameKey] as VIUI;
-            UIItemTex tex;
+            if (ui.leftView == null) return;
             ui.leftView.ClearAllElements();
+            UIItemTex tex;
             List<int> keys = _items.Keys.ToList();
             keys.Sort();
             int count = 0;
@@ -488,7 +488,7 @@ namespace VoidInventory
                 On_Player.PayCurrency -= On_Player_PayCurrency;
                 loaded = false;
             }
-            private static bool BuyItem(Player self, long price, int customCurrency,bool realPay)
+            private static bool BuyItem(Player self, long price, int customCurrency, bool realPay)
             {
                 Main.NewText("do hook");
                 VInventory inv = self.GetModPlayer<VIPlayer>().vInventory;
@@ -572,7 +572,7 @@ namespace VoidInventory
                 }
                 return false;
             successPay:;
-                if(!realPay)
+                if (!realPay)
                 {
                     return true;
                 }
@@ -645,8 +645,8 @@ namespace VoidInventory
             public static Predicate<Item> IsPlaceable = i => i.createTile != -1;
             public static Predicate<Item> IsAccessory = i => i.accessory;
             public static Predicate<Item> IsAmmo = i => i.ammo != AmmoID.None;
-            //public static Predicate<Item> IsPotion=i=>
             public static Predicate<Item> IsMatserOrExpert = i => i.master || i.expert;
+            public static Predicate<Item> IsBuff = i => i.buffType > 0 && i.buffTime > 0;
             public static Predicate<Item> IsPet = i => Main.lightPet[i.buffType] || Main.projPet[i.buffType] || Main.projPet[i.shoot];
             public static Predicate<Item> IsMount = i => BuffID.Sets.BasicMountData[i.buffType] is not null;
             public static Predicate<Item> IsDye = i => i.dye != 0 || i.hairDye != -1;
@@ -654,6 +654,8 @@ namespace VoidInventory
             public static Predicate<Item> IsConsumable = i => i.consumable;
             public static Predicate<Item> IsFishing = i => i.questItem || i.fishingPole > 0 || ItemID.Sets.IsFishingCrate[i.type] || ItemID.Sets.IsFishingCrateHardmode[i.type] || RecipeGroup.recipeGroups[RecipeGroupID.FishForDinner].ContainsItem(i.type);
             public static Predicate<Item> IsMod = i => i.ModItem is not null;
+            public static Predicate<Item> IsMaterial = i => i.material;
+            public static Predicate<Item> IsVanity = i => i.vanity;
             public static Predicate<Item> IsModFor(Mod mod)
             {
                 return i => (i.ModItem?.Mod ?? null) == mod;
