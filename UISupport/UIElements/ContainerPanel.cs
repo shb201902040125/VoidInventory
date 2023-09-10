@@ -15,6 +15,8 @@ namespace VoidInventory.UISupport.UIElements
             }
         }
         private InnerPanel _innerPanel;
+        public bool forceUpdateX;
+        public bool forceUpdateY;
         public List<BaseUIElement> InnerUIE => _innerPanel.ChildrenElements;
 
         public VerticalScrollbar Vscroll { get; private set; }
@@ -37,7 +39,7 @@ namespace VoidInventory.UISupport.UIElements
             Info.HiddenOverflow = true;
             Info.Width.Percent = 1f;
             Info.Height.Percent = 1f;
-            Info.SetMargin(4f);
+            Info.SetMargin(10f);
             if (_innerPanel == null)
             {
                 _innerPanel = new InnerPanel();
@@ -74,7 +76,7 @@ namespace VoidInventory.UISupport.UIElements
             {
                 PlayerInput.LockVanillaMouseScroll("VIScroll");
             }
-            if (Vscroll != null && verticalWhellValue != Vscroll.WheelValue)
+            if (Vscroll != null && (verticalWhellValue != Vscroll.WheelValue || forceUpdateY))
             {
                 verticalWhellValue = Vscroll.WheelValue;
                 float maxY = MovableSize.Y;/* innerPanelMaxLocation.Y - _innerPanel.Info.TotalSize.Y;
@@ -85,8 +87,9 @@ namespace VoidInventory.UISupport.UIElements
 
                 _innerPanel.Info.Top.Pixel = -MathHelper.Lerp(innerPanelMinLocation.Y, maxY, verticalWhellValue);
                 Calculation();
+                if (forceUpdateY) forceUpdateY = false;
             }
-            if (Hscroll != null && horizontalWhellValue != Hscroll.WheelValue)
+            if (Hscroll != null && (horizontalWhellValue != Hscroll.WheelValue || forceUpdateY))
             {
                 horizontalWhellValue = Hscroll.WheelValue;
                 float maxX = MovableSize.X;/*innerPanelMaxLocation.X - _innerPanel.Info.TotalSize.X;
@@ -97,6 +100,7 @@ namespace VoidInventory.UISupport.UIElements
 
                 _innerPanel.Info.Left.Pixel = -MathHelper.Lerp(innerPanelMinLocation.X, maxX, horizontalWhellValue);
                 Calculation();
+                if (forceUpdateX) forceUpdateX = false;
             }
         }
         public bool AddElement(BaseUIElement element)
@@ -105,9 +109,8 @@ namespace VoidInventory.UISupport.UIElements
             if (flag)
             {
                 Calculation();
+                CalculationScroll();
             }
-            //Hscroll?.Info
-            Vscroll?.UpdateBarValue();
             return flag;
         }
         public bool RemoveElement(BaseUIElement element)
@@ -116,16 +119,20 @@ namespace VoidInventory.UISupport.UIElements
             if (flag)
             {
                 Calculation();
+                CalculationScroll();
             }
-
-            Vscroll?.UpdateBarValue();
             return flag;
         }
         public void ClearAllElements()
         {
             _innerPanel.ChildrenElements.Clear();
-            Vscroll?.UpdateBarValue();
+            CalculationScroll();
             Calculation();
+        }
+        public void CalculationScroll()
+        {
+            Hscroll?.Calculation();
+            Vscroll.Calculation();
         }
         private void CalculationInnerPanelSize()
         {

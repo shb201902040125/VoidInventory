@@ -88,12 +88,9 @@ namespace VoidInventory.Content
             bg.Register(left);
 
             leftView = new();
-            leftView.Info.SetMargin(0);
             left.Register(leftView);
 
-            VerticalScrollbar leftscroll = new(62);
-            //leftscroll.Info.IsHidden = true;
-            leftscroll.Info.Left.Pixel += 10;
+            VerticalScrollbar leftscroll = new(62*3);
             leftView.SetVerticalScrollbar(leftscroll);
             left.Register(leftscroll);
 
@@ -103,12 +100,9 @@ namespace VoidInventory.Content
             bg.Register(right);
 
             rightView = new();
-            rightView.Info.SetMargin(0);
             right.Register(rightView);
 
-            VerticalScrollbar rightscroll = new(62);
-            rightscroll.Info.IsHidden = true;
-            rightscroll.Info.Left.Pixel += 10;
+            VerticalScrollbar rightscroll = new(62 * 3);
             rightView.SetVerticalScrollbar(rightscroll);
             right.Register(rightscroll);
 
@@ -124,7 +118,7 @@ namespace VoidInventory.Content
             detail.SetPos(0, 20);
             dbg.Register(detail);
 
-            VerticalScrollbar detailscroll = new(hide: true);
+            VerticalScrollbar detailscroll = new();
             detail.SetVerticalScrollbar(detailscroll);
             dbg.Register(detailscroll);
         }
@@ -159,7 +153,7 @@ namespace VoidInventory.Content
                 return;
             }
 
-            int x = 10, y = 10;
+            int x = 0, y = 0;
             foreach (Recipe r in recipes)
             {
                 if (r.createItem.type == ItemID.None)
@@ -190,7 +184,7 @@ namespace VoidInventory.Content
                 x += 56;
                 if (x + 56 > rightView.Width)
                 {
-                    x = 10;
+                    x = 0;
                     y += 56;
                 }
             }
@@ -201,8 +195,8 @@ namespace VoidInventory.Content
                 ? new(rt)
                 : (global::VoidInventory.Content.UIRecipeTask)(recipe is Recipe r ? new(r) : throw new Exception(recipe.GetType().Name + " is not accept"));
             task.id = TaskCount;
-            task.SetSize(-20, 52, 1);
-            task.SetPos(10, 10 + (TaskCount * 62));
+            task.SetSize(-30, 52, 1);
+            task.SetPos(0, TaskCount * 62);
             leftView.AddElement(task);
         }
         public void LoadRT()
@@ -224,6 +218,8 @@ namespace VoidInventory.Content
                 }
             }
             leftView.Calculation();
+            leftView.Vscroll.Calculation();
+            leftView.forceUpdateY = true;
         }
     }
 }
