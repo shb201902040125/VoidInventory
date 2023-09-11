@@ -447,21 +447,8 @@ namespace VoidInventory
             }
             foreach (var predicate in predicates)
             {
-                result.RemoveAll(pair =>
-                {
-                    bool flag = pair.Value.Count == 0 || !predicate(ContentSamples.ItemsByType[pair.Key]);
-                    if(!flag)
-                    {
-                        Main.NewText($"{Lang.GetItemName(pair.Key)}:{pair.Value.Count == 0},{!predicate(ContentSamples.ItemsByType[pair.Key])}");
-                    }
-                    if (predicate == Filters.IsMaterial)
-                    {
-                        Main.NewText($"{ContentSamples.ItemsByType[pair.Key].material}");
-                    }
-                    return flag;
-                });
+                result.RemoveAll(pair => pair.Value.Count == 0 || !predicate(ContentSamples.ItemsByType[pair.Key]));
             }
-            Main.NewText($"PassCount:{result.Count}");
             return result;
         }
 
