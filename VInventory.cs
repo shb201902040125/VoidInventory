@@ -2,14 +2,14 @@
 using System.Threading.Tasks;
 using Terraria.GameContent.UI;
 using Terraria.ModLoader.IO;
+using Terraria.UI;
 using VoidInventory.Content;
-using VoidInventory.Filters;
+using Terraria.ID;
 
 namespace VoidInventory
 {
     public class VInventory
     {
-        internal static Filter<Item, IEnumerable<Item>> currentFilter;
         internal Dictionary<int, List<Item>> _items = new();
         internal List<RecipeTask> recipeTasks = new();
         internal int tryDelay;
@@ -608,52 +608,75 @@ namespace VoidInventory
         internal class Filters
         {
             public static Predicate<Item> IsWeapon = i => i.damage > 0;
-            public static Predicate<Item> IsTool = i => i.pick > 0 || i.hammer > 0 || i.axe > 0;
-            public static Predicate<Item> IsPickaxe = i => i.pick > 0;
-            public static Predicate<Item> IsHammer = i => i.hammer > 0;
-            public static Predicate<Item> IsAxe = i => i.axe > 0;
-            public static Predicate<Item> IsArmor => IsEquipAny(EquipType.Head, EquipType.Body, EquipType.Legs);
-            public static Predicate<Item> IsEquipAll(params EquipType[] types)
-            {
-                return i =>
-                {
-                    var att = i.GetType().GetCustomAttribute<AutoloadEquip>();
-                    if (att is null)
-                    {
-                        return false;
-                    }
-                    return types.All(att.equipTypes.Contains);
-                };
-            }
-            public static Predicate<Item> IsEquipAny(params EquipType[] types)
-            {
-                return i =>
-                {
-                    var att = i.GetType().GetCustomAttribute<AutoloadEquip>();
-                    if (att is null)
-                    {
-                        return false;
-                    }
-                    return types.Any(att.equipTypes.Contains);
-                };
-            }
-            public static Predicate<Item> IsPlaceable = i => i.createTile != -1;
-            public static Predicate<Item> IsAccessory = i => i.accessory;
-            public static Predicate<Item> IsAmmo = i => i.ammo != AmmoID.None;
-            public static Predicate<Item> IsMatserOrExpert = i => i.master || i.expert;
-            public static Predicate<Item> IsBuff = i => i.buffType > 0 && i.buffTime > 0;
-            public static Predicate<Item> IsPet = i => Main.lightPet[i.buffType] || Main.projPet[i.buffType] || Main.projPet[i.shoot];
-            public static Predicate<Item> IsMount = i => BuffID.Sets.BasicMountData[i.buffType] is not null;
-            public static Predicate<Item> IsDye = i => i.dye != 0 || i.hairDye != -1;
-            public static Predicate<Item> IsBossSummons = i => ItemID.Sets.SortingPriorityBossSpawns[i.buffType] != 0;
-            public static Predicate<Item> IsConsumable = i => i.consumable;
-            public static Predicate<Item> IsFishing = i => i.questItem || i.fishingPole > 0 || ItemID.Sets.IsFishingCrate[i.type] || ItemID.Sets.IsFishingCrateHardmode[i.type] || RecipeGroup.recipeGroups[RecipeGroupID.FishForDinner].ContainsItem(i.type);
-            public static Predicate<Item> IsMod = i => i.ModItem is not null;
+            public static Predicate<Item> IsTool = i => i.pick > 0 || i.hammer > 0 || i.axe > 0 || i.fishingPole > 0 || ItemIdsThatAreAcceptedAsTool.Contains(i.type);
+            public static Predicate<Item> IsArmor = i => (i.headSlot != -1 || i.bodySlot != -1 || i.legSlot != -1) && !i.vanity;
+            public static Predicate<Item> IsBuildingBlock = i => i.createWall != -1 || i.tileWand != -1 || (i.createTile != -1 && !Main.tileFrameImportant[i.createTile]);
+            public static Predicate<Item> IsFurniture = i => i.createTile != -1 && Main.tileFrameImportant[i.createTile];
+            public static Predicate<Item> IsAccessory = i => i.accessory && !ItemSlot.IsMiscEquipment(i);
+            public static Predicate<Item> IsConsumable = i => i.type == ItemID.GuideVoodooDoll || i.type == ItemID.ClothierVoodooDoll || (i.consumable && !(i.createTile != -1 || i.createWall != -1 || i.tileWand != -1));
             public static Predicate<Item> IsMaterial = i => i.material;
-            public static Predicate<Item> IsVanity = i => i.vanity;
-            public static Predicate<Item> IsModFor(Mod mod)
+            public static Predicate<Item> IsVanity = i => (i.headSlot != -1 || i.bodySlot != -1 || i.legSlot != -1) && i.vanity;
+            public static Predicate<Item> IsMiscEquip = i => ItemSlot.IsMiscEquipment(i) && !i.accessory;
+            private static HashSet<int> ItemIdsThatAreAcceptedAsTool = new()
             {
-                return i => (i.ModItem?.Mod ?? null) == mod;
+        509,
+        850,
+        851,
+        3612,
+        3625,
+        3611,
+        510,
+        849,
+        3620,
+        1071,
+        1543,
+        1072,
+        1544,
+        1100,
+        1545,
+        50,
+        3199,
+        3124,
+        5358,
+        5359,
+        5360,
+        5361,
+        5437,
+        1326,
+        5335,
+        3384,
+        4263,
+        4819,
+        4262,
+        946,
+        4707,
+        205,
+        206,
+        207,
+        1128,
+        3031,
+        4820,
+        5302,
+        5364,
+        4460,
+        4608,
+        4872,
+        3032,
+        5303,
+        5304,
+        1991,
+        4821,
+        3183,
+        779,
+        5134,
+        1299,
+        4711,
+        4049,
+        114
+    };
+            public static Predicate<Item> Misc(params Predicate<Item>[] predicates)
+            {
+                return i => !predicates.Any(p => p(i));
             }
         }
     }

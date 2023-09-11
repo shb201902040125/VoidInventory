@@ -16,6 +16,17 @@ ToLock: Unprotected, click to lock
 Locked: Protected, lick to unlock
 Protect: If locked, this item will not be consumed as a material
 RecipeTaskFinish: Recipe task completed, target item - {0}
+IsWeapon: Weapon
+IsAccessory: Accessory
+IsArmor: Armor
+IsConsumable: Consumble
+IsBuildingBlock: BuildingBlock
+IsMaterial: Material
+IsTool: Tool
+IsFurniture: Furniture
+IsVanity: Vanity
+IsMiscEquip: MiscEquip
+IsMisc: Misc
 
 Configs: {
 	VIConfig: {

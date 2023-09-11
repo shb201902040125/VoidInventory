@@ -54,17 +54,29 @@ namespace VoidInventory.Content
             };
             left.Register(leftView);
 
-            fbg = new(10 + 10 * 35, 40);
+            fbg = new(10 + 11 * 35, 40);
             fbg.Info.SetMargin(5);
             fbg.SetPos(20, 42);
             bg.Register(fbg);
 
-            for (int i = 0; i < 10; i++)
+            int i = 0;
+            void SetFilter(int  filter)
             {
-                UIItemFilter filters = new(i, this);
-                filters.SetPos(i * 35, 0);
+                UIItemFilter filters = new(filter, this);
+                filters.SetPos(i++ * 35, 0);
                 fbg.Register(filters);
             }
+            SetFilter(ItemFilter.Weapon);
+            SetFilter(ItemFilter.Armor);
+            SetFilter(ItemFilter.Vanity);
+            SetFilter(ItemFilter.BuildingBlock);
+            SetFilter(ItemFilter.Furniture);
+            SetFilter(ItemFilter.Accessory);
+            SetFilter(ItemFilter.MiscEquip);
+            SetFilter(ItemFilter.Consumable);
+            SetFilter(ItemFilter.Tool);
+            SetFilter(ItemFilter.Material);
+            SetFilter(ItemFilter.Misc);
 
             UIPanel inputbg = new(160 + 24, 30, 12, 4, Color.White, 1f);
             inputbg.SetPos(-inputbg.Width - 20, 20 + 10, 1);

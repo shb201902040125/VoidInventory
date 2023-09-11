@@ -7,14 +7,14 @@ namespace VoidInventory.Content
         public const byte Weapon = 0;
         public const byte Accessory = 1;
         public const byte Armor = 2;
-        public const byte Potion = 3;
-        public const byte Block = 4;
-        public const byte Tool = 5;
-        public const byte Material = 6;
+        public const byte Consumable = 3;
+        public const byte BuildingBlock = 4;
+        public const byte Material = 5;
+        public const byte Tool = 6;
         public const byte Furniture = 7;
         public const byte Vanity = 8;
-        public const byte Attachment = 9;
-        //public const byte Favorite = 10;
+        public const byte MiscEquip = 9;
+        public const byte Misc = 10;
     }
     public class UIItemFilter : UIImage
     {
@@ -33,7 +33,7 @@ namespace VoidInventory.Content
         /// <exception cref="Exception"></exception>
         public UIItemFilter(int filter, VIUI viui, Texture2D tex = null) : base(tex ?? T2D("Terraria/Images/UI/Creative/Infinite_Icons"), new(30), Color.White)
         {
-            if (filter > 9 && tex == null)
+            if (filter > 10 && tex == null)
             {
                 throw new Exception("超出原版筛选贴图，请传入");
             }
@@ -49,17 +49,17 @@ namespace VoidInventory.Content
                     viui.focusFilter = Filter;
                     Predicate<Item> filters = Filter switch
                     {
-                        ItemFilter.Weapon => (item) => IsWeapon(item) && !IsAccessory(item),
+                        ItemFilter.Weapon => IsWeapon,
                         ItemFilter.Accessory => IsAccessory,
                         ItemFilter.Armor => IsArmor,
-                        ItemFilter.Potion => IsBuff,
-                        ItemFilter.Block => IsPlaceable,
-                        ItemFilter.Tool => IsTool,
+                        ItemFilter.Consumable => IsConsumable,
+                        ItemFilter.BuildingBlock => IsBuildingBlock,
                         ItemFilter.Material => IsMaterial,
-                        ItemFilter.Furniture => IsPlaceable,
+                        ItemFilter.Tool => IsTool,
+                        ItemFilter.Furniture => IsFurniture,
                         ItemFilter.Vanity => IsVanity,
-                        ItemFilter.Attachment => (item) => IsPet(item) && IsDye(item) && IsMount(item),
-                        //ItemFilter.Favorite =>,
+                        ItemFilter.MiscEquip => IsMiscEquip,
+                        ItemFilter.Misc => Misc(IsWeapon, IsAccessory, IsArmor, IsConsumable, IsBuildingBlock, IsMaterial, IsTool, IsFurniture, IsVanity, IsMiscEquip),
                         _ => throw new Exception("筛选序列溢出")
                     };
                     viui.leftView.ClearAllElements();
@@ -68,10 +68,6 @@ namespace VoidInventory.Content
                         UIItemTex item = new(type);
                         viui.LoadClickEvent(item, type, targets);
                         viui.leftView.AddElement(item);
-                        if (item.ContainedItem.type == ItemID.Starfury)
-                        {
-                            Main.NewText(IsTool(item.ContainedItem));
-                        }
                     }
                     viui.SortLeft();
                 }
@@ -81,7 +77,29 @@ namespace VoidInventory.Content
                     viui.FindInvItem();
                 }
             };
+            //加个鼠标在上面显示字的功能
+            //Main.hoverItemName貌似没用
+            //Events.OnMouseHover += evt =>
+            //{
+            //    Main.hoverItemName = Filter switch
+            //    {
+            //        ItemFilter.Weapon => GTV("IsWeapon"),
+            //        ItemFilter.Accessory => GTV("IsAccessory"),
+            //        ItemFilter.Armor => GTV("IsArmor"),
+            //        ItemFilter.Consumable => GTV("IsConsumable"),
+            //        ItemFilter.BuildingBlock => GTV("IsBuildingBlock"),
+            //        ItemFilter.Material => GTV("IsMaterial"),
+            //        ItemFilter.Tool => GTV("IsTool"),
+            //        ItemFilter.Furniture => GTV("IsFurniture"),
+            //        ItemFilter.Vanity => GTV("IsVanity"),
+            //        ItemFilter.MiscEquip => GTV("IsMiscEquip"),
+            //        ItemFilter.Misc => GTV("IsMisc"),
+            //        //ItemFilter.Favorite =>,
+            //        _ => throw new Exception("筛选序列溢出")
+            //    };
+            //};
         }
+
         public override void DrawSelf(SpriteBatch sb)
         {
             SimpleDraw(sb, Tex, HitBox().TopLeft(), Filter > 10 ? null : new(Filter * 30, 0, 30, 30),

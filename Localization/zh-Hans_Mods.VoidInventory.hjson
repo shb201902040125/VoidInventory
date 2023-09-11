@@ -16,6 +16,17 @@ ToLock: 未锁定，点击锁定
 Locked: 已锁定，点击解锁
 Protect: 如果锁定，该物品不会被作为合成材料消耗
 RecipeTaskFinish: 合成任务已完成,目标物品-{0}
+IsWeapon: 武器
+IsAccessory: 配饰
+IsArmor: 盔甲
+IsConsumable: 消耗品
+IsBuildingBlock: 物块
+IsMaterial: 材料
+IsTool: 工具
+IsFurniture: 家具
+IsVanity: 时装
+IsMiscEquip: 装备
+IsMisc: 其他
 
 Configs: {
 	VIConfig: {
