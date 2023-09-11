@@ -25,6 +25,7 @@ namespace VoidInventory.Content
         /// </summary>
         public int Filter { get; private set; }
         public readonly VIUI viui;
+        public readonly string prompt;
         /// <summary>
         /// 
         /// </summary>
@@ -39,6 +40,21 @@ namespace VoidInventory.Content
             }
             this.viui = viui;
             Filter = filter;
+            prompt = Filter switch
+            {
+                ItemFilter.Weapon => GTV("IsWeapon"),
+                ItemFilter.Accessory => GTV("IsAccessory"),
+                ItemFilter.Armor => GTV("IsArmor"),
+                ItemFilter.Consumable => GTV("IsConsumable"),
+                ItemFilter.BuildingBlock => GTV("IsBuildingBlock"),
+                ItemFilter.Material => GTV("IsMaterial"),
+                ItemFilter.Tool => GTV("IsTool"),
+                ItemFilter.Furniture => GTV("IsFurniture"),
+                ItemFilter.Vanity => GTV("IsVanity"),
+                ItemFilter.MiscEquip => GTV("IsMiscEquip"),
+                ItemFilter.Misc => GTV("IsMisc"),
+                _ => throw new Exception("筛选序列溢出")
+            };
         }
         public override void LoadEvents()
         {
@@ -77,33 +93,12 @@ namespace VoidInventory.Content
                     viui.FindInvItem();
                 }
             };
-            //加个鼠标在上面显示字的功能
-            //Main.hoverItemName貌似没用
-            //Events.OnMouseHover += evt =>
-            //{
-            //    Main.hoverItemName = Filter switch
-            //    {
-            //        ItemFilter.Weapon => GTV("IsWeapon"),
-            //        ItemFilter.Accessory => GTV("IsAccessory"),
-            //        ItemFilter.Armor => GTV("IsArmor"),
-            //        ItemFilter.Consumable => GTV("IsConsumable"),
-            //        ItemFilter.BuildingBlock => GTV("IsBuildingBlock"),
-            //        ItemFilter.Material => GTV("IsMaterial"),
-            //        ItemFilter.Tool => GTV("IsTool"),
-            //        ItemFilter.Furniture => GTV("IsFurniture"),
-            //        ItemFilter.Vanity => GTV("IsVanity"),
-            //        ItemFilter.MiscEquip => GTV("IsMiscEquip"),
-            //        ItemFilter.Misc => GTV("IsMisc"),
-            //        //ItemFilter.Favorite =>,
-            //        _ => throw new Exception("筛选序列溢出")
-            //    };
-            //};
         }
-
         public override void DrawSelf(SpriteBatch sb)
         {
             SimpleDraw(sb, Tex, HitBox().TopLeft(), Filter > 10 ? null : new(Filter * 30, 0, 30, 30),
                 Vector2.Zero, null, viui.focusFilter == Filter ? Color.Gold.SetAlpha(150) : Color.White);
+            if (Info.IsMouseHover) Main.hoverItemName = prompt;
         }
     }
 }

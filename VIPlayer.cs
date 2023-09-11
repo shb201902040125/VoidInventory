@@ -1,4 +1,5 @@
 ﻿using Microsoft.Build.Locator;
+using Microsoft.Xna.Framework.Input;
 using Terraria.GameInput;
 using Terraria.ModLoader.IO;
 using VoidInventory.Content;
