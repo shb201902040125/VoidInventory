@@ -131,6 +131,7 @@
             /// </summary>
             public bool HiddenOverflow = false;
 
+            public bool NeedRemove = false;
             /// <summary>
             /// UI部件是否激活
             /// </summary>
@@ -406,8 +407,15 @@
             {
                 if (child != null && child.IsVisible)
                 {
-                    child.Update(gt);
-                    child.Events.OnUpdate?.Invoke(child);
+                    if (child.Info.NeedRemove)
+                    {
+                        Remove(child);
+                    }
+                    else
+                    {
+                        child.Update(gt);
+                        child.Events.OnUpdate?.Invoke(child);
+                    }
                 }
             });
             Events.OnUpdate?.Invoke(this);

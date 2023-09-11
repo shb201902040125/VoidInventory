@@ -169,6 +169,10 @@ namespace VoidInventory.Content
                         SortRight(targetItems);
                     }
                 };
+                slot.Events.OnRightUp += evt =>
+                {
+                    slot.Info.NeedRemove = true;
+                };
                 rightView.AddElement(slot);
                 count++;
             }
