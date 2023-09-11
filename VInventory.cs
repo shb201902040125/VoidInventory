@@ -1,4 +1,6 @@
-﻿using System.Linq;
+﻿using Harmony;
+using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Terraria.GameContent.UI;
 using Terraria.ModLoader.IO;
@@ -442,6 +444,7 @@ namespace VoidInventory
         /// <returns></returns>
         internal Dictionary<int, List<Item>> Filter(params Predicate<Item>[] predicates)
         {
+            Main.NewText($"Do Filter:{predicates.Length}");
             Dictionary<int, List<Item>> result = new();
             foreach (var pair in _items)
             {
@@ -449,8 +452,21 @@ namespace VoidInventory
             }
             foreach (var predicate in predicates)
             {
-                result.RemoveAll(list => list.Count == 0 || !predicate(list[0]));
+                result.RemoveAll(pair =>
+                {
+                    bool flag = pair.Value.Count == 0 || !predicate(ContentSamples.ItemsByType[pair.Key]);
+                    if(!flag)
+                    {
+                        Main.NewText($"{Lang.GetItemName(pair.Key)}:{pair.Value.Count == 0},{!predicate(ContentSamples.ItemsByType[pair.Key])}");
+                    }
+                    if (predicate == Filters.IsMaterial)
+                    {
+                        Main.NewText($"{ContentSamples.ItemsByType[pair.Key].material}");
+                    }
+                    return flag;
+                });
             }
+            Main.NewText($"PassCount:{result.Count}");
             return result;
         }
 
@@ -617,7 +633,7 @@ namespace VoidInventory
             public static Predicate<Item> IsPickaxe = i => i.pick > 0;
             public static Predicate<Item> IsHammer = i => i.hammer > 0;
             public static Predicate<Item> IsAxe = i => i.axe > 0;
-            public static Predicate<Item> IsArmor => IsEquipAny(EquipType.Head, EquipType.Body, EquipType.Legs);
+            public static Predicate<Item> IsArmor = i => i.headSlot != -1 || i.bodySlot != -1 || i.legSlot != -1;
             public static Predicate<Item> IsEquipAll(params EquipType[] types)
             {
                 return i =>
@@ -642,11 +658,12 @@ namespace VoidInventory
                     return types.Any(att.equipTypes.Contains);
                 };
             }
-            public static Predicate<Item> IsPlaceable = i => i.createTile != -1;
+            public static Predicate<Item> IsBlock = i => i.createTile != -1 && !Main.tileFrameImportant[i.createTile] && (Main.tileSolid[i.createTile] || Main.tileSolidTop[i.createTile]);
+            public static Predicate<Item> IsPlaceable = i => (i.createTile != -1 && Main.tileFrameImportant[i.createTile]) || i.createWall != -1;
             public static Predicate<Item> IsAccessory = i => i.accessory;
             public static Predicate<Item> IsAmmo = i => i.ammo != AmmoID.None;
             public static Predicate<Item> IsMatserOrExpert = i => i.master || i.expert;
-            public static Predicate<Item> IsBuff = i => i.buffType > 0 && i.buffTime > 0;
+            public static Predicate<Item> IsPotion = i => (i.healLife > 0 || i.healMana > 0 || i.buffType > 0) && i.buffTime > 0;
             public static Predicate<Item> IsPet = i => Main.lightPet[i.buffType] || Main.projPet[i.buffType] || Main.projPet[i.shoot];
             public static Predicate<Item> IsMount = i => BuffID.Sets.BasicMountData[i.buffType] is not null;
             public static Predicate<Item> IsDye = i => i.dye != 0 || i.hairDye != -1;

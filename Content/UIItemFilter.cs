@@ -1,4 +1,5 @@
-﻿using static VoidInventory.VInventory.Filters;
+﻿using System;
+using static VoidInventory.VInventory.Filters;
 
 namespace VoidInventory.Content
 {
@@ -9,8 +10,8 @@ namespace VoidInventory.Content
         public const byte Armor = 2;
         public const byte Potion = 3;
         public const byte Block = 4;
-        public const byte Tool = 5;
-        public const byte Material = 6;
+        public const byte Material = 5;
+        public const byte Tool = 6;
         public const byte Furniture = 7;
         public const byte Vanity = 8;
         public const byte Attachment = 9;
@@ -44,15 +45,17 @@ namespace VoidInventory.Content
         {
             Events.OnLeftDown += evt =>
             {
+                Main.chatMonitor.Clear();
+                Main.NewText($"Do Filter:[{Filter}]");
                 Predicate<Item> filters = Filter switch
                 {
                     ItemFilter.Weapon => (item) => IsWeapon(item) && !IsAccessory(item),
                     ItemFilter.Accessory => IsAccessory,
                     ItemFilter.Armor => IsArmor,
-                    ItemFilter.Potion => IsBuff,
-                    ItemFilter.Block => IsPlaceable,
-                    ItemFilter.Tool => IsTool,
+                    ItemFilter.Potion => IsPotion,
+                    ItemFilter.Block => IsBlock,
                     ItemFilter.Material => IsMaterial,
+                    ItemFilter.Tool => IsTool,
                     ItemFilter.Furniture => IsPlaceable,
                     ItemFilter.Vanity => IsVanity,
                     ItemFilter.Attachment => (item) => IsPet(item) && IsDye(item) && IsMount(item),
