@@ -615,30 +615,6 @@ namespace VoidInventory
             public static Predicate<Item> IsHammer = i => i.hammer > 0;
             public static Predicate<Item> IsAxe = i => i.axe > 0;
             public static Predicate<Item> IsArmor = i => i.headSlot != -1 || i.bodySlot != -1 || i.legSlot != -1;
-            public static Predicate<Item> IsEquipAll(params EquipType[] types)
-            {
-                return i =>
-                {
-                    var att = i.GetType().GetCustomAttribute<AutoloadEquip>();
-                    if (att is null)
-                    {
-                        return false;
-                    }
-                    return types.All(att.equipTypes.Contains);
-                };
-            }
-            public static Predicate<Item> IsEquipAny(params EquipType[] types)
-            {
-                return i =>
-                {
-                    var att = i.GetType().GetCustomAttribute<AutoloadEquip>();
-                    if (att is null)
-                    {
-                        return false;
-                    }
-                    return types.Any(att.equipTypes.Contains);
-                };
-            }
             public static Predicate<Item> IsBlock = i => i.createTile != -1 && !Main.tileFrameImportant[i.createTile] && (Main.tileSolid[i.createTile] || Main.tileSolidTop[i.createTile]);
             public static Predicate<Item> IsPlaceable = i => (i.createTile != -1 && Main.tileFrameImportant[i.createTile]) || i.createWall != -1;
             public static Predicate<Item> IsAccessory = i => i.accessory;
