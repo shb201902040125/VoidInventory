@@ -439,7 +439,6 @@ namespace VoidInventory
         /// <returns></returns>
         internal Dictionary<int, List<Item>> Filter(params Predicate<Item>[] predicates)
         {
-            Main.NewText($"Do Filter:{predicates.Length}");
             Dictionary<int, List<Item>> result = new();
             foreach (var pair in _items)
             {
