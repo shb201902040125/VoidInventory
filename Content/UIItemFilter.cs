@@ -44,34 +44,48 @@ namespace VoidInventory.Content
         {
             Events.OnLeftDown += evt =>
             {
-                Predicate<Item> filters = Filter switch
+                if (viui.focusFilter != Filter)
                 {
-                    ItemFilter.Weapon => (item) => IsWeapon(item) && !IsAccessory(item),
-                    ItemFilter.Accessory => IsAccessory,
-                    ItemFilter.Armor => IsArmor,
-                    ItemFilter.Potion => IsBuff,
-                    ItemFilter.Block => IsPlaceable,
-                    ItemFilter.Tool => IsTool,
-                    ItemFilter.Material => IsMaterial,
-                    ItemFilter.Furniture => IsPlaceable,
-                    ItemFilter.Vanity => IsVanity,
-                    ItemFilter.Attachment => (item) => IsPet(item) && IsDye(item) && IsMount(item),
-                    //ItemFilter.Favorite =>,
-                    _ => throw new Exception("筛选序列溢出")
-                };
-                viui.leftView.ClearAllElements();
-                foreach ((int type ,List<Item> targets) in Main.LocalPlayer.VIP().vInventory.Filter(filters))
-                {
-                    UIItemTex item = new(type);
-                    viui.LoadClickEvent(item,type, targets);
-                    viui.leftView.AddElement(item);
+                    viui.focusFilter = Filter;
+                    Predicate<Item> filters = Filter switch
+                    {
+                        ItemFilter.Weapon => (item) => IsWeapon(item) && !IsAccessory(item),
+                        ItemFilter.Accessory => IsAccessory,
+                        ItemFilter.Armor => IsArmor,
+                        ItemFilter.Potion => IsBuff,
+                        ItemFilter.Block => IsPlaceable,
+                        ItemFilter.Tool => IsTool,
+                        ItemFilter.Material => IsMaterial,
+                        ItemFilter.Furniture => IsPlaceable,
+                        ItemFilter.Vanity => IsVanity,
+                        ItemFilter.Attachment => (item) => IsPet(item) && IsDye(item) && IsMount(item),
+                        //ItemFilter.Favorite =>,
+                        _ => throw new Exception("筛选序列溢出")
+                    };
+                    viui.leftView.ClearAllElements();
+                    foreach ((int type, List<Item> targets) in Main.LocalPlayer.VIP().vInventory.Filter(filters))
+                    {
+                        UIItemTex item = new(type);
+                        viui.LoadClickEvent(item, type, targets);
+                        viui.leftView.AddElement(item);
+                        if (item.ContainedItem.type == ItemID.Starfury)
+                        {
+                            Main.NewText(IsTool(item.ContainedItem));
+                        }
+                    }
+                    viui.SortLeft();
                 }
-                viui.SortLeft();
+                else
+                {
+                    viui.focusFilter = -1;
+                    viui.FindInvItem();
+                }
             };
         }
         public override void DrawSelf(SpriteBatch sb)
         {
-            SimpleDraw(sb, Tex, HitBox().TopLeft(), Filter > 10 ? null : new(Filter * 30, 0, 30, 30), Vector2.Zero);
+            SimpleDraw(sb, Tex, HitBox().TopLeft(), Filter > 10 ? null : new(Filter * 30, 0, 30, 30),
+                Vector2.Zero, null, viui.focusFilter == Filter ? Color.Gold.SetAlpha(150) : Color.White);
         }
     }
 }

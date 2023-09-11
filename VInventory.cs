@@ -144,7 +144,7 @@ namespace VoidInventory
             }
             Updating = false;
         }
-        internal void RefreshInvUI(Item lastItem = null, Filter<Item, IEnumerable<Item>> filter = null)
+        internal void RefreshInvUI(Item lastItem = null)
         {
             if (Main.dedServ)
             {
@@ -153,18 +153,13 @@ namespace VoidInventory
             VIUI ui = VoidInventory.Ins.uis.Elements[VIUI.NameKey] as VIUI;
             if (ui.leftView == null) return;
             ui.leftView.ClearAllElements();
-            UIItemTex tex;
             List<int> keys = _items.Keys.ToList();
             keys.Sort();
-            int count = 0;
-            foreach (int key in keys)
+            if (ui.focusFilter < 0)
             {
-                tex = new(key);
-                tex.SetPos((count % 6 * 56) + 10, (count / 6 * 56) + 10);
-                ui.LoadClickEvent(tex, key, _items[key]);
-                ui.leftView.AddElement(tex);
-                count++;
+                ui.FindInvItem();
             }
+            else ui.fbg.ChildrenElements.First(x => x is UIItemFilter filter && filter.Filter == ui.focusFilter).Events.LeftDown(ui);
             if (lastItem is not null && ui.focusType == lastItem.type)
             {
                 ui.SortRight(_items[ui.focusType]);

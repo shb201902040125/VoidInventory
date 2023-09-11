@@ -115,7 +115,7 @@ namespace VoidInventory.UISupport.UIElements
         private int timer;
         private Rectangle symHitBox;
         private Vector2 offset;
-        private bool isEnableIME = false;
+        public bool IsEnableIME { get; private set; } = false;
         private DynamicSpriteFont font;
         private KeyCooldown up, down, left, right, enter;
 
@@ -155,15 +155,15 @@ namespace VoidInventory.UISupport.UIElements
             base.LoadEvents();
             Events.OnLeftClick += (element) =>
             {
-                isEnableIME = true;
+                IsEnableIME = true;
             };
         }
 
         public override void Update(GameTime gt)
         {
-            if (Main.mouseLeft && !ContainsPoint(Main.MouseScreen) && isEnableIME)
+            if (Main.mouseLeft && !ContainsPoint(Main.MouseScreen) && IsEnableIME)
             {
-                isEnableIME = false;
+                IsEnableIME = false;
             }
 
             up.Update();
@@ -172,7 +172,7 @@ namespace VoidInventory.UISupport.UIElements
             right.Update();
             enter.Update();
             base.Update(gt);
-            if (isEnableIME)
+            if (IsEnableIME)
             {
                 timer++;
                 if (Text.Length != OldTextLength)
@@ -189,7 +189,7 @@ namespace VoidInventory.UISupport.UIElements
 
         public override void DrawChildren(SpriteBatch sb)
         {
-            if (!isEnableIME && Text.Length == 0)
+            if (!IsEnableIME && Text.Length == 0)
             {
                 sb.DrawString(font, prompt, Info.Location + offset, _color * 0.5f);
                 base.DrawChildren(sb);
@@ -203,7 +203,7 @@ namespace VoidInventory.UISupport.UIElements
             for (int i = 0; i < texts.Length; i++)
             {
                 text = texts[i];
-                if (isEnableIME && i == CursorPosition.Y && j <= 8 && j >= 0)
+                if (IsEnableIME && i == CursorPosition.Y && j <= 8 && j >= 0)
                 {
                     x = FontAssets.MouseText.Value.MeasureString(text[..CursorPosition.X]).X;
                     symHitBox.X = (int)(Info.Location.X + x - symOffsetX + offset.X);
@@ -238,7 +238,7 @@ namespace VoidInventory.UISupport.UIElements
                 offsetY += font.LineSpacing;
             }
 
-            if (isEnableIME)
+            if (IsEnableIME)
             {
                 Terraria.GameInput.PlayerInput.WritingText = true;
                 Main.instance.HandleIME();
