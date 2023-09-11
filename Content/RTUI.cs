@@ -25,7 +25,7 @@ namespace VoidInventory.Content
             }
 
             RemoveAll();
-            bg = new(800, 600);
+            bg = new(820, 600);
             bg.SetCenter(0, 0, 0.5f, 0.5f);
             bg.CanDrag = true;
             Register(bg);

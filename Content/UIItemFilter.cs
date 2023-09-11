@@ -45,17 +45,15 @@ namespace VoidInventory.Content
         {
             Events.OnLeftDown += evt =>
             {
-                Main.chatMonitor.Clear();
-                Main.NewText($"Do Filter:[{Filter}]");
                 Predicate<Item> filters = Filter switch
                 {
                     ItemFilter.Weapon => (item) => IsWeapon(item) && !IsAccessory(item),
                     ItemFilter.Accessory => IsAccessory,
                     ItemFilter.Armor => IsArmor,
-                    ItemFilter.Potion => IsPotion,
-                    ItemFilter.Block => IsBlock,
-                    ItemFilter.Material => IsMaterial,
+                    ItemFilter.Potion => IsBuff,
+                    ItemFilter.Block => IsPlaceable,
                     ItemFilter.Tool => IsTool,
+                    ItemFilter.Material => IsMaterial,
                     ItemFilter.Furniture => IsPlaceable,
                     ItemFilter.Vanity => IsVanity,
                     ItemFilter.Attachment => (item) => IsPet(item) && IsDye(item) && IsMount(item),
@@ -74,7 +72,8 @@ namespace VoidInventory.Content
         }
         public override void DrawSelf(SpriteBatch sb)
         {
-            SimpleDraw(sb, Tex, HitBox().TopLeft(), Filter > 10 ? null : new(Filter * 30, 0, 30, 30), Vector2.Zero);
+            SimpleDraw(sb, Tex, HitBox().TopLeft(), Filter > 10 ? null : new(Filter * 30, 0, 30, 30),
+                Vector2.Zero, null, viui.focusFilter == Filter ? Color.Gold.SetAlpha(150) : Color.White);
         }
     }
 }

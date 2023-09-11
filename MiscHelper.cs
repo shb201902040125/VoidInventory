@@ -265,5 +265,9 @@ namespace VoidInventory
         {
             return new Rectangle(x ?? rec.X, y ?? rec.Y, w ?? rec.Width, h ?? rec.Height);
         }
+        public static void Reversal(ref bool flag, bool condition)
+        {
+            if (flag == condition) flag = !flag;
+        }
     }
 }
