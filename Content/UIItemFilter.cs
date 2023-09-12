@@ -63,35 +63,37 @@ namespace VoidInventory.Content
                 if (viui.focusFilter != Filter)
                 {
                     viui.focusFilter = Filter;
-                    Predicate<Item> filters = Filter switch
-                    {
-                        ItemFilter.Weapon => IsWeapon,
-                        ItemFilter.Accessory => IsAccessory,
-                        ItemFilter.Armor => IsArmor,
-                        ItemFilter.Consumable => IsConsumable,
-                        ItemFilter.BuildingBlock => IsBuildingBlock,
-                        ItemFilter.Material => IsMaterial,
-                        ItemFilter.Tool => IsTool,
-                        ItemFilter.Furniture => IsFurniture,
-                        ItemFilter.Vanity => IsVanity,
-                        ItemFilter.MiscEquip => IsMiscEquip,
-                        ItemFilter.Misc => Misc(IsWeapon, IsAccessory, IsArmor, IsConsumable, IsBuildingBlock, IsMaterial, IsTool, IsFurniture, IsVanity, IsMiscEquip),
-                        _ => throw new Exception("筛选序列溢出")
-                    };
+                    Predicate<Item> filters = SetFilter();
                     viui.leftView.ClearAllElements();
-                    foreach ((int type, List<Item> targets) in Main.LocalPlayer.VIP().vInventory.Filter(filters))
+                    foreach (int type in Main.LocalPlayer.VIP().vInventory.Filter(filters))
                     {
-                        UIItemTex item = new(type);
-                        viui.LoadClickEvent(item, type, targets);
-                        viui.leftView.AddElement(item);
+                        viui.RegisterIndexUI(type);
                     }
-                    viui.SortLeft();
+                    viui.RefreshLeft();
                 }
                 else
                 {
                     viui.focusFilter = -1;
                     viui.FindInvItem();
                 }
+            };
+        }
+        public Predicate<Item> SetFilter()
+        {
+            return Filter switch
+            {
+                ItemFilter.Weapon => IsWeapon,
+                ItemFilter.Accessory => IsAccessory,
+                ItemFilter.Armor => IsArmor,
+                ItemFilter.Consumable => IsConsumable,
+                ItemFilter.BuildingBlock => IsBuildingBlock,
+                ItemFilter.Material => IsMaterial,
+                ItemFilter.Tool => IsTool,
+                ItemFilter.Furniture => IsFurniture,
+                ItemFilter.Vanity => IsVanity,
+                ItemFilter.MiscEquip => IsMiscEquip,
+                ItemFilter.Misc => Misc(IsWeapon, IsAccessory, IsArmor, IsConsumable, IsBuildingBlock, IsMaterial, IsTool, IsFurniture, IsVanity, IsMiscEquip),
+                _ => throw new Exception("筛选序列溢出")
             };
         }
         public override void DrawSelf(SpriteBatch sb)

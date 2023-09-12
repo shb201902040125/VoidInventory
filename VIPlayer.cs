@@ -33,13 +33,7 @@ namespace VoidInventory
                     r.OnInitialization();
                     v.OnInitialization();
                     v.leftView.ClearAllElements();
-                    foreach (int item in vInventory._items.Keys)
-                    {
-                        UIItemTex tex = new(item);
-                        v.LoadClickEvent(tex, item, vInventory._items[item]);
-                        v.leftView.AddElement(tex);
-                    }
-                    v.SortLeft();
+                    v.RefreshLeft(false);
                     r.LoadRT();
                     r.firstLoad = true;
                 }

@@ -122,9 +122,9 @@ namespace VoidInventory
                 ui.FindInvItem();
             }
             else ui.fbg.ChildrenElements.First(x => x is UIItemFilter filter && filter.Filter == ui.focusFilter).Events.LeftDown(ui);
-            if (lastItem is not null && ui.focusType == lastItem.type)
+            if (lastItem is not null && VIUI.focusType == lastItem.type)
             {
-                ui.SortRight(_items[ui.focusType]);
+                ui.ReFreshRight();
             }
         }
         internal void RefreshTaskUI()
@@ -436,7 +436,7 @@ namespace VoidInventory
         /// </summary>
         /// <param name="predicates"></param>
         /// <returns></returns>
-        internal Dictionary<int, List<Item>> Filter(params Predicate<Item>[] predicates)
+        internal ICollection<int> Filter(params Predicate<Item>[] predicates)
         {
             Dictionary<int, List<Item>> result = new();
             foreach (var pair in _items)
@@ -447,7 +447,7 @@ namespace VoidInventory
             {
                 result.RemoveAll(list => list.Count == 0 || !predicate(list[0]));
             }
-            return result;
+            return result.Keys;
         }
 
         internal class Hook

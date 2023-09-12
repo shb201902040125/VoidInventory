@@ -1,5 +1,4 @@
 ﻿using System.Linq;
-using Terraria.GameInput;
 
 namespace VoidInventory.Content
 {
@@ -10,9 +9,12 @@ namespace VoidInventory.Content
         public UIPanel left, right;
         public UIContainerPanel leftView, rightView;
         public UIInputBox input;
-        public int focusType = ItemID.None;
+        internal static int focusType = ItemID.None;
         public int focusFilter = -1;
+        public List<UIItemFilter> filters = new();
         private int timer = 30;
+        public static VInventory Inv => Main.LocalPlayer.VIP().vInventory;
+        public static Dictionary<int, List<Item>> InvItems => Inv._items;
         public IEnumerable<UIItemTex> Items => leftView.InnerUIE.Cast<UIItemTex>();
         public override void OnInitialization()
         {
@@ -50,10 +52,7 @@ namespace VoidInventory.Content
             {
                 if (Main.mouseItem.type > ItemID.None && Main.mouseItem.stack > 0)
                 {
-                    int type = Main.mouseItem.type;
-                    var inv = Main.LocalPlayer.VIP().vInventory;
-                    inv.Merge(ref Main.mouseItem);
-                    SortRight(inv._items[type]);
+                    Inv.Merge(ref Main.mouseItem);
                 }
             };
             left.Register(leftView);
@@ -64,11 +63,12 @@ namespace VoidInventory.Content
             bg.Register(fbg);
 
             int i = 0;
-            void SetFilter(int  filter)
+            void SetFilter(int filter)
             {
                 UIItemFilter filters = new(filter, this);
                 filters.SetPos(i++ * 35, 0);
                 fbg.Register(filters);
+                this.filters.Add(filters);
             }
             SetFilter(ItemFilter.Weapon);
             SetFilter(ItemFilter.Armor);
@@ -106,14 +106,12 @@ namespace VoidInventory.Content
             bg.Register(right);
 
             rightView = new();
-            rightView.Events.OnLeftClick+= evt =>
+            rightView.Events.OnLeftDown += evt =>
             {
                 if (Main.mouseItem.type > ItemID.None && Main.mouseItem.stack > 0)
                 {
-                    int type = Main.mouseItem.type;
-                    var inv = Main.LocalPlayer.VIP().vInventory;
-                    inv.Merge(ref Main.mouseItem);
-                    SortRight(inv._items[type]);
+                    Inv.Merge(ref Main.mouseItem);
+                    ReFreshRight();
                 }
             };
             rightView.Events.OnUpdate += evt =>
@@ -139,37 +137,63 @@ namespace VoidInventory.Content
             {
                 left.Info.Width.Percent = MathF.Pow(--timer / 30f, 3f) / 2f + 0.5f;
                 if (timer == 0) right.Info.IsVisible = true;
-                SortLeft();
+                left.Calculation();
+                RefreshLeft();
             }
             //展开
             else if (focusType == 0 && timer < 30)
             {
                 left.Info.Width.Percent = MathF.Pow(++timer / 30f, 0.33f) / 2f + 0.5f;
                 Reversal(ref right.Info.IsVisible, true);
-                SortLeft();
+                left.Calculation();
+                RefreshLeft();
             }
         }
-        public void SortLeft()
+        /// <summary>
+        /// 刷新物品索引背包
+        /// </summary>
+        /// <param name="sortOnly">是否仅排序</param>
+        public void RefreshLeft(bool sortOnly = true)
         {
-            int x = 0, y = 0;
-            foreach (UIItemTex item in Items)
+            if (sortOnly)
             {
-                item.SetPos(x, y);
-                x += 56;
-                if (x + 56 > leftView.InnerWidth)
+                int x = 0, y = 0;
+                foreach (UIItemTex item in Items)
                 {
-                    x = 0;
-                    y += 56;
+                    item.SetPos(x, y);
+                    x += 56;
+                    if (x + 56 > leftView.InnerWidth)
+                    {
+                        x = 0;
+                        y += 56;
+                    }
                 }
             }
-            Calculation();
+            else
+            {
+                List<int> hasItems = Items.Select(i => i.ContainedItem.type).ToList();
+                List<int> nowItems = InvItems.Keys.ToList();
+                var remove = hasItems.Except(nowItems);
+                var add = nowItems.Except(hasItems);
+                leftView.InnerUIE.RemoveAll(i => i is UIItemTex t && remove.Contains(t.ContainedItem.type));
+                foreach (int itemType in add)
+                {
+                    RegisterIndexUI(itemType);
+                }
+                RefreshLeft();
+            }
         }
-        public void SortRight(List<Item> targetItems)
+        /// <summary>
+        /// 刷新实例背包，会重新注册UI
+        /// </summary>
+        public void ReFreshRight()
         {
+            if (focusType == 0) return;
             rightView.ClearAllElements();
             int count = 0;
-            foreach (Item item in targetItems)
+            foreach (Item item in InvItems[focusType])
             {
+                if (item.stack <= 0) continue;
                 UIItemSlot slot = new(item)
                 {
                     CanTakeOutSlot = new(x => true),
@@ -179,28 +203,28 @@ namespace VoidInventory.Content
                 count++;
             }
         }
-        public void LoadClickEvent(UIItemTex tex, int type, List<Item> targetItems)
+        /// <summary>
+        /// 向索引背包注册元素，配合<see cref="RefreshLeft(bool)"/>来整理元素
+        /// </summary>
+        /// <param name="type"></param>
+        public void RegisterIndexUI(int type)
         {
+            UIItemTex tex = new(type);
             tex.Events.OnLeftDown += evt =>
             {
-                focusType = type;
-                SortRight(targetItems);
+                focusType = tex.ContainedItem.type;
+                ReFreshRight();
             };
+            leftView.AddElement(tex);
         }
         public void FindInvItem()
         {
             leftView.ClearAllElements();
-            VInventory inv = Main.LocalPlayer.VIP().vInventory;
-            Dictionary<int, List<Item>> willPut = inv.Filter(item => input.Text.Length == 0 || item.Name.Contains(input.Text));
-            List<int> keys = willPut.Keys.ToList();
-            keys.Sort();
-            foreach (int key in keys)
+            foreach (int key in Inv.Filter(item => input.Text.Length == 0 || item.Name.Contains(input.Text)))
             {
-                UIItemTex tex = new(key);
-                LoadClickEvent(tex, key, willPut[key]);
-                leftView.AddElement(tex);
+                RegisterIndexUI(key);
             }
-            SortLeft();
+            RefreshLeft();
         }
     }
 }
