@@ -5,6 +5,7 @@ using Terraria.ModLoader.IO;
 using Terraria.UI;
 using VoidInventory.Content;
 using Terraria.ID;
+using Terraria;
 
 namespace VoidInventory
 {
@@ -12,13 +13,11 @@ namespace VoidInventory
     {
         internal Dictionary<int, List<Item>> _items = new();
         internal List<RecipeTask> recipeTasks = new();
-        internal int tryDelay;
+        internal static int tryDelay;
         /// <summary>
         /// 如果此值为True，UI应当不可交互
         /// </summary>
         internal bool Updating;
-        private Task mergaTask = null;
-        private Queue<Item> mergaQueue = new();
         private Dictionary<int, int> tileMap = new();
         internal bool HasWater, HasLava, HasHoney, HasShimmer;
         internal static bool needRefreshInv, needRefreshRT;
@@ -42,19 +41,11 @@ namespace VoidInventory
         }
         public void NormalUpdateCheck()
         {
-            if (mergaTask is null && mergaQueue.Count > 0)
+            tryDelay++;
+            if (tryDelay >= VIConfig.normalUpdateCheckTime * 60)
             {
-                mergaTask = new(() => Merge_Inner(mergaQueue.Dequeue()));
-                mergaTask.Start();
-            }
-            else
-            {
-                tryDelay++;
-                if (tryDelay >= VIConfig.normalUpdateCheckTime * 60)
-                {
-                    MergeAllInInventory();
-                    tryDelay = 0;
-                }
+                MergeAllInInventory();
+                tryDelay = 0;
             }
             if (needRefreshInv)
             {
@@ -74,24 +65,8 @@ namespace VoidInventory
         public void Merge(ref Item item)
         {
             Item toInner = item;
-            Merge_Inner(toInner);
             item = new(ItemID.None);
-            //Item toInner = item;
-            //if (mergaTask is null)
-            //{
-            //    //未有合并线程，创建并启动合并线程
-            //    mergaTask = new(() => Merge_Inner(toInner));
-            //    mergaTask.Start();
-            //}
-            //else
-            //{
-            //    //已有合并线程，添加到任务队列
-            //    lock (mergaQueue)
-            //    {
-            //        mergaQueue.Enqueue(toInner);
-            //    }
-            //}
-            //item = new(ItemID.None);
+            Merge_Inner(toInner);
         }
         public void Merge_Inner(Item item, bool ignoreRecipe = false)
         {
@@ -122,25 +97,15 @@ namespace VoidInventory
                 //未有该种物品，直接将拆分结果设为储存
                 _items[item.type] = SplitItems(item);
             }
-            //检查合并任务队列是否清空
-            if (mergaQueue.TryDequeue(out Item nextItem))
+            //加载物品时不进行合成尝试
+            if (!ignoreRecipe)
             {
-                //继续合并
-                Merge_Inner(nextItem);
+                TryFinishRecipeTasks();
             }
-            else
-            {
-                //加载物品时不进行合成尝试
-                if (!ignoreRecipe)
-                {
-                    TryFinishRecipeTasks();
-                }
-                //清除合并线程
-                mergaTask = null;
-                tryDelay = 0;
-                //进行刷新UI的回调
-                needRefreshInv = true;
-            }
+            //清除合并线程
+            tryDelay = 0;
+            //进行刷新UI的回调
+            needRefreshInv = true;
             Updating = false;
         }
         internal void RefreshInvUI(Item lastItem = null)
@@ -152,8 +117,6 @@ namespace VoidInventory
             VIUI ui = VoidInventory.Ins.uis.Elements[VIUI.NameKey] as VIUI;
             if (ui.leftView == null) return;
             ui.leftView.ClearAllElements();
-            List<int> keys = _items.Keys.ToList();
-            keys.Sort();
             if (ui.focusFilter < 0)
             {
                 ui.FindInvItem();
@@ -181,9 +144,9 @@ namespace VoidInventory
             Updating = true;
             Dictionary<int, List<Item>> buffer = _items;
             _items = new();
-            foreach (List<Item> _items in buffer.Values)
+            foreach (List<Item> items in buffer.Values)
             {
-                foreach (Item item in _items)
+                foreach (Item item in items)
                 {
                     if (HasItem(item.type, out List<Item> held))
                     {
@@ -208,7 +171,7 @@ namespace VoidInventory
                     }
                     else
                     {
-                        this._items[item.type] = new() { item };
+                        _items[item.type] = new() { item };
                     }
                 }
             }
@@ -218,6 +181,45 @@ namespace VoidInventory
             needRefreshInv = true;
             needRefreshRT = true;
             Updating = false;
+        }
+        public void MergeAll(int type, bool refreshUI = true)
+        {
+            if (!HasItem(type, out var items))
+            {
+                return;
+            }
+            foreach (Item item in items)
+            {
+                if (HasItem(item.type, out List<Item> held))
+                {
+                    foreach (Item container in held)
+                    {
+                        if (container.stack >= container.maxStack || !ItemLoader.CanStack(item, container))
+                        {
+                            continue;
+                        }
+                        int move = Math.Min(container.maxStack - container.stack, item.stack);
+                        container.stack += move;
+                        item.stack -= move;
+                        if (item.stack == 0)
+                        {
+                            break;
+                        }
+                    }
+                    if (item.stack > 0)
+                    {
+                        held.AddRange(SplitItems(item));
+                    }
+                }
+                else
+                {
+                    this._items[item.type] = new() { item };
+                }
+            }
+            if(refreshUI)
+            {
+                needRefreshInv = true;
+            }
         }
 
         /// <summary>

@@ -48,9 +48,12 @@ namespace VoidInventory.Content
             leftView = new();
             leftView.Events.OnLeftClick += evt =>
             {
-                if (Main.mouseItem.type > ItemID.None)
+                if (Main.mouseItem.type > ItemID.None && Main.mouseItem.stack > 0)
                 {
-                    Main.LocalPlayer.VIP().vInventory.Merge(ref Main.mouseItem);
+                    int type = Main.mouseItem.type;
+                    var inv = Main.LocalPlayer.VIP().vInventory;
+                    inv.Merge(ref Main.mouseItem);
+                    SortRight(inv._items[type]);
                 }
             };
             left.Register(leftView);
@@ -103,6 +106,24 @@ namespace VoidInventory.Content
             bg.Register(right);
 
             rightView = new();
+            rightView.Events.OnLeftClick+= evt =>
+            {
+                if (Main.mouseItem.type > ItemID.None && Main.mouseItem.stack > 0)
+                {
+                    int type = Main.mouseItem.type;
+                    var inv = Main.LocalPlayer.VIP().vInventory;
+                    inv.Merge(ref Main.mouseItem);
+                    SortRight(inv._items[type]);
+                }
+            };
+            rightView.Events.OnUpdate += evt =>
+            {
+                if (rightView.InnerUIE.Count == 0)
+                {
+                    leftView.InnerUIE.RemoveAll(x => x is UIItemTex tex && tex.ContainedItem.type == focusType);
+                    focusType = 0;
+                }
+            };
             right.Register(rightView);
 
             VerticalScrollbar rightscroll = new(62 * 3);
@@ -154,63 +175,6 @@ namespace VoidInventory.Content
                     CanTakeOutSlot = new(x => true),
                 };
                 slot.SetPos(count % 6 * 56, count / 6 * 56);
-                slot.Events.OnMouseHover += evt =>
-                {
-                    if (!Main.mouseRight || slot.ContainedItem.IsAir)
-                    {
-                        return;
-                    }
-                    int moveCount = 0;
-                    slot.RightKeepDown = true;
-                    if (slot.RightKeepDownTime > 15)
-                    {
-                        if (Main.mouseItem.IsAir)
-                        {
-                            moveCount = 1;
-                            Main.mouseItem = new(slot.ContainedItem.type, moveCount);
-                            slot.ContainedItem.stack -= moveCount;
-                        }
-                        else if (Main.mouseItem.type == slot.ContainedItem.type)
-                        {
-                            moveCount = Math.Max(1, (int)Math.Pow(Math.Min(10, (slot.RightKeepDownTime - 15) / 60f), 2));
-                            moveCount = Math.Min(moveCount, slot.ContainedItem.stack);
-                            moveCount = Math.Min(moveCount, Main.mouseItem.maxStack - Main.mouseItem.stack);
-                            Main.mouseItem.stack += moveCount;
-                            slot.ContainedItem.stack -= moveCount;
-                        }
-                    }
-                    else
-                    {
-                        if (!PlayerInput.Triggers.Old.MouseRight && PlayerInput.Triggers.Current.MouseRight)
-                        {
-                            moveCount = 1;
-                        }
-                        else
-                        {
-                            return;
-                        }
-                        if (Main.mouseItem.IsAir)
-                        {
-                            moveCount = 1;
-                            Main.mouseItem = new(slot.ContainedItem.type, moveCount);
-                            slot.ContainedItem.stack -= moveCount;
-                        }
-                        else if (Main.mouseItem.type == slot.ContainedItem.type)
-                        {
-                            moveCount = 1;
-                            Main.mouseItem.stack += moveCount;
-                            slot.ContainedItem.stack -= moveCount;
-                        }
-                    }
-                    if (moveCount > 0)
-                    {
-                        Main.playerInventory = true;
-                    }
-                    if (slot.ContainedItem.IsAir)
-                    {
-                        slot.Info.NeedRemove = true;
-                    }
-                };
                 rightView.AddElement(slot);
                 count++;
             }
@@ -227,10 +191,13 @@ namespace VoidInventory.Content
         {
             leftView.ClearAllElements();
             VInventory inv = Main.LocalPlayer.VIP().vInventory;
-            foreach ((int item, List<Item> targets) in inv.Filter(item => input.Text.Length == 0 || item.Name.Contains(input.Text)))
+            Dictionary<int, List<Item>> willPut = inv.Filter(item => input.Text.Length == 0 || item.Name.Contains(input.Text));
+            List<int> keys = willPut.Keys.ToList();
+            keys.Sort();
+            foreach (int key in keys)
             {
-                UIItemTex tex = new(item);
-                LoadClickEvent(tex, item, targets);
+                UIItemTex tex = new(key);
+                LoadClickEvent(tex, key, willPut[key]);
                 leftView.AddElement(tex);
             }
             SortLeft();
