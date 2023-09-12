@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using Terraria.GameInput;
 
 namespace VoidInventory.Content
 {
@@ -153,25 +154,62 @@ namespace VoidInventory.Content
                     CanTakeOutSlot = new(x => true),
                 };
                 slot.SetPos(count % 6 * 56, count / 6 * 56);
-                Item target = item;
-                slot.OnPickItem += uie =>
+                slot.Events.OnMouseHover += evt =>
                 {
-                    targetItems.Remove(target);
-                    if (targetItems.Count == 0)
+                    if (!Main.mouseRight || slot.ContainedItem.IsAir)
                     {
-                        rightView.ClearAllElements();
-                        focusType = -1;
-                        leftView.InnerUIE.RemoveAll(x => x is UIItemTex tex && tex.ContainedItem.type == target.type);
-                        SortLeft();
+                        return;
+                    }
+                    int moveCount = 0;
+                    slot.RightKeepDown = true;
+                    if (slot.RightKeepDownTime > 15)
+                    {
+                        if (Main.mouseItem.IsAir)
+                        {
+                            moveCount = 1;
+                            Main.mouseItem = new(slot.ContainedItem.type, moveCount);
+                            slot.ContainedItem.stack -= moveCount;
+                        }
+                        else if (Main.mouseItem.type == slot.ContainedItem.type)
+                        {
+                            moveCount = Math.Max(1, (int)Math.Pow(Math.Min(10, (slot.RightKeepDownTime - 15) / 60f), 2));
+                            moveCount = Math.Min(moveCount, slot.ContainedItem.stack);
+                            moveCount = Math.Min(moveCount, Main.mouseItem.maxStack - Main.mouseItem.stack);
+                            Main.mouseItem.stack += moveCount;
+                            slot.ContainedItem.stack -= moveCount;
+                        }
                     }
                     else
                     {
-                        SortRight(targetItems);
+                        if (!PlayerInput.Triggers.Old.MouseRight && PlayerInput.Triggers.Current.MouseRight)
+                        {
+                            moveCount = 1;
+                        }
+                        else
+                        {
+                            return;
+                        }
+                        if (Main.mouseItem.IsAir)
+                        {
+                            moveCount = 1;
+                            Main.mouseItem = new(slot.ContainedItem.type, moveCount);
+                            slot.ContainedItem.stack -= moveCount;
+                        }
+                        else if (Main.mouseItem.type == slot.ContainedItem.type)
+                        {
+                            moveCount = 1;
+                            Main.mouseItem.stack += moveCount;
+                            slot.ContainedItem.stack -= moveCount;
+                        }
                     }
-                };
-                slot.Events.OnRightUp += evt =>
-                {
-                    slot.Info.NeedRemove = true;
+                    if (moveCount > 0)
+                    {
+                        Main.playerInventory = true;
+                    }
+                    if (slot.ContainedItem.IsAir)
+                    {
+                        slot.Info.NeedRemove = true;
+                    }
                 };
                 rightView.AddElement(slot);
                 count++;

@@ -52,8 +52,7 @@ namespace VoidInventory
                 tryDelay++;
                 if (tryDelay >= VIConfig.normalUpdateCheckTime * 60)
                 {
-                    TryFinishRecipeTasks();
-                    CombineCurrency();
+                    MergeAllInInventory();
                     tryDelay = 0;
                 }
             }
