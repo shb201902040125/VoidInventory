@@ -403,19 +403,13 @@
         /// <param name="gt"></param>
         public virtual void Update(GameTime gt)
         {
+            ChildrenElements.RemoveAll(c => c.Info.NeedRemove);
             ChildrenElements.ForEach(child =>
             {
                 if (child != null && child.IsVisible)
                 {
-                    if (child.Info.NeedRemove)
-                    {
-                        Remove(child);
-                    }
-                    else
-                    {
-                        child.Update(gt);
-                        child.Events.OnUpdate?.Invoke(child);
-                    }
+                    child.Update(gt);
+                    child.Events.OnUpdate?.Invoke(child);
                 }
             });
             Events.OnUpdate?.Invoke(this);
