@@ -205,11 +205,20 @@ namespace VoidInventory.Content
         }
         /// <summary>
         /// 向索引背包注册元素，配合<see cref="RefreshLeft(bool)"/>来整理元素
+        /// 过不了当前筛选不注册
         /// </summary>
         /// <param name="type"></param>
         public void RegisterIndexUI(int type)
         {
             UIItemTex tex = new(type);
+            if (focusFilter > -1 && !filters[focusFilter].GetFilter()(tex.ContainedItem))
+            {
+                return;
+            }
+            if (input.Text.Length > 0 && !input.Text.Contains(tex.ContainedItem.Name))
+            {
+                return;
+            }
             tex.Events.OnLeftDown += evt =>
             {
                 focusType = tex.ContainedItem.type;

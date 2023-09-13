@@ -63,7 +63,7 @@ namespace VoidInventory.Content
                 if (viui.focusFilter != Filter)
                 {
                     viui.focusFilter = Filter;
-                    Predicate<Item> filters = SetFilter();
+                    Predicate<Item> filters = GetFilter();
                     viui.leftView.ClearAllElements();
                     foreach (int type in Main.LocalPlayer.VIP().vInventory.Filter(filters))
                     {
@@ -78,7 +78,7 @@ namespace VoidInventory.Content
                 }
             };
         }
-        public Predicate<Item> SetFilter()
+        public Predicate<Item> GetFilter()
         {
             return Filter switch
             {
