@@ -353,6 +353,10 @@
         /// </summary>
         public Color?[] DrawRec = new Color?[2];
         public static int TextYoffset;
+        /// <summary>
+        /// 用于某些时候排序
+        /// </summary>
+        public int id;
 
         public Action<SpriteBatch> ReDraw = null;
         public Action OnResolutionChange = null;
@@ -362,21 +366,28 @@
             Info = new ElementInfo();
             ChildrenElements = new List<BaseUIElement>();
         }
-
+        /// <summary>
+        /// 可用于阻止元素自身的事件注册
+        /// </summary>
+        public Func<bool> PreLoadEvents;
         /// <summary>
         /// 加载事件
         /// </summary>
         public virtual void LoadEvents()
         {
         }
-
+        public Action PostLoadEvents;
         /// <summary>
         /// 初始化UI部件, 不要删除Base
         /// </summary>
         public virtual void OnInitialization()
         {
             //ChildrenElements.ForEach(child => child.OnInitialization());
-            LoadEvents();
+            if (PreLoadEvents == null || PreLoadEvents?.Invoke() == true)
+            {
+                LoadEvents();
+            }
+            PostLoadEvents?.Invoke();
         }
         public virtual void PostInitialization()
         {
@@ -386,6 +397,10 @@
             {
                 uie.PostInitialization();
             }
+        }
+        public virtual void OnSaveAndQuit()
+        {
+            ChildrenElements.ForEach(child => child.OnSaveAndQuit());
         }
 
         /// <summary>

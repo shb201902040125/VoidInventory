@@ -24,7 +24,9 @@ namespace VoidInventory.Content
         /// <br/>8时装，9配件
         /// </summary>
         public int Filter { get; private set; }
-        public readonly VIUI viui;
+        private bool open;
+        public bool Open => open;
+        private readonly Action<bool> FilterEvent;
         public readonly string prompt;
         /// <summary>
         /// 
@@ -32,13 +34,13 @@ namespace VoidInventory.Content
         /// <param name="filter">使用<see cref="ItemFilter"/></param>
         /// <param name="tex"></param>
         /// <exception cref="Exception"></exception>
-        public UIItemFilter(int filter, VIUI viui, Texture2D tex = null) : base(tex ?? T2D("Terraria/Images/UI/Creative/Infinite_Icons"), new(30), Color.White)
+        public UIItemFilter(int filter, Action<bool> filterEvent, Texture2D tex = null) : base(tex ?? T2D("Terraria/Images/UI/Creative/Infinite_Icons"), new(30), Color.White)
         {
             if (filter > 10 && tex == null)
             {
                 throw new Exception("超出原版筛选贴图，请传入");
             }
-            this.viui = viui;
+            FilterEvent = filterEvent;
             Filter = filter;
             prompt = Filter switch
             {
@@ -60,22 +62,8 @@ namespace VoidInventory.Content
         {
             Events.OnLeftDown += evt =>
             {
-                if (viui.focusFilter != Filter)
-                {
-                    viui.focusFilter = Filter;
-                    Predicate<Item> filters = GetFilter();
-                    viui.leftView.ClearAllElements();
-                    foreach (int type in Main.LocalPlayer.VIP().vInventory.Filter(filters))
-                    {
-                        viui.RegisterIndexUI(type);
-                    }
-                    viui.RefreshLeft();
-                }
-                else
-                {
-                    viui.focusFilter = -1;
-                    viui.FindInvItem();
-                }
+                FilterEvent.Invoke(Open);
+                Reversal(ref open);
             };
         }
         public Predicate<Item> GetFilter()
@@ -99,7 +87,7 @@ namespace VoidInventory.Content
         public override void DrawSelf(SpriteBatch sb)
         {
             SimpleDraw(sb, Tex, HitBox().TopLeft(), Filter > 10 ? null : new(Filter * 30, 0, 30, 30),
-                Vector2.Zero, null, viui.focusFilter == Filter ? Color.Gold.SetAlpha(150) : Color.White);
+                Vector2.Zero, null, open ? Color.Gold.SetAlpha(150) : Color.White);
             if (Info.IsMouseHover) Main.hoverItemName = prompt;
         }
     }

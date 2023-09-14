@@ -1,6 +1,4 @@
-﻿using Microsoft.Build.Locator;
-using Microsoft.Xna.Framework.Input;
-using Terraria.GameInput;
+﻿using Terraria.GameInput;
 using Terraria.ModLoader.IO;
 using VoidInventory.Content;
 
@@ -32,26 +30,12 @@ namespace VoidInventory
                 {
                     r.OnInitialization();
                     v.OnInitialization();
-                    v.leftView.ClearAllElements();
                     v.RefreshLeft(false);
                     r.LoadRT();
                     r.firstLoad = true;
                 }
                 BaseUIElement u = vi ? v : r;
-                ref bool visible = ref u.Info.IsVisible;
-                visible = !visible;
-                if (visible)
-                {
-                    VInventory inv = Main.LocalPlayer.GetModPlayer<VIPlayer>().vInventory;
-                    if (vi)
-                    {
-                        VInventory.needRefreshInv = true;
-                    }
-                    else
-                    {
-                        VInventory.needRefreshRT = true;
-                    }
-                }
+                Reversal(ref u.Info.IsVisible);
             }
         }
         private static BaseUIElement GetUI(string name) => VoidInventory.Ins.uis.Elements[name];

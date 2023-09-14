@@ -3,6 +3,7 @@ using System.Linq;
 using System.Runtime.Loader;
 using System.Windows.Forms;
 using Terraria.ModLoader.IO;
+using VoidInventory.Content;
 
 namespace VoidInventory
 {
@@ -489,7 +490,7 @@ namespace VoidInventory
                         return;
                     }
                     player.vInventory.recipeTasks.AddRange(Load(tag));
-                    VInventory.needRefreshRT = true;
+                    RTUI.RT.LoadRT();
                 }
                 catch (Exception ex)
                 {

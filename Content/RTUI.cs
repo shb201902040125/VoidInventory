@@ -5,6 +5,7 @@ namespace VoidInventory.Content
 {
     public class RTUI : ContainerElement
     {
+        public static RTUI RT => VoidInventory.Ins.uis.Elements[NameKey] as RTUI;
         public const string NameKey = "VoidInventory.Content.RTUI";
         public bool firstLoad;
         public UIPanel bg, dbg;
@@ -79,6 +80,7 @@ namespace VoidInventory.Content
                 viui.Info.IsVisible = true;
                 ((VIUI)viui).bg.SetPos(bg.Info.TotalLocation);
                 viui.Calculation();
+                VIPlayer.vi = true;
             };
             bg.Register(VI);
 
@@ -90,7 +92,7 @@ namespace VoidInventory.Content
             leftView = new();
             left.Register(leftView);
 
-            VerticalScrollbar leftscroll = new(62*3);
+            VerticalScrollbar leftscroll = new(62 * 3);
             leftView.SetVerticalScrollbar(leftscroll);
             left.Register(leftscroll);
 
@@ -125,6 +127,11 @@ namespace VoidInventory.Content
         public override void Update(GameTime gt)
         {
             base.Update(gt);
+        }
+        public override void OnSaveAndQuit()
+        {
+            RemoveAll();
+            firstLoad = false;
         }
         public void ChangeItem(int itemType)
         {

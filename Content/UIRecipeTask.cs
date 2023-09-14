@@ -8,10 +8,6 @@ namespace VoidInventory.Content
     {
         private static readonly Color G = new(0, 230, 100, 255);
         private static readonly Color R = new(255, 200, 50, 255);
-        /// <summary>
-        /// 仅用于排序
-        /// </summary>
-        public int id;
         public bool[] down;
         private int timer;
         public RecipeTask RT { get; private set; }

@@ -282,6 +282,13 @@ namespace VoidInventory.UISupport
                 child?.Calculation();
             }
         }
+        public void SaveAndQuit()
+        {
+            foreach (ContainerElement child in Elements.Values)
+            {
+                child?.OnSaveAndQuit();
+            }
+        }
 
         /// <summary>
         /// 将容器置顶

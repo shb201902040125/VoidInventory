@@ -7,8 +7,7 @@ namespace VoidInventory
     public class VISystem : ModSystem
     {
         public static ModKeybind Keybind { get; private set; }
-        public static Vector2? drawIME;
-        public Point size;
+        private Point size;
         public override void Load()
         {
             Keybind = KeybindLoader.RegisterKeybind(Mod, Mod.Name, "K");

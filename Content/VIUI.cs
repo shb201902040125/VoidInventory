@@ -1,21 +1,26 @@
 ﻿using System.Linq;
+using Terraria.Audio;
 
 namespace VoidInventory.Content
 {
     public class VIUI : ContainerElement
     {
+        public static VIUI VI => VoidInventory.Ins.uis.Elements[NameKey] as VIUI;
         public const string NameKey = "VoidInventory.Content.VIUI";
         public UIPanel bg, fbg;
         public UIPanel left, right;
         public UIContainerPanel leftView, rightView;
         public UIInputBox input;
-        internal static int focusType = ItemID.None;
-        public int focusFilter = -1;
-        public List<UIItemFilter> filters = new();
+        public int focusType = ItemID.None;
         private int timer = 30;
+        private bool taking;
+        private int takeTime;
+        private int takeSpeed = 10;
+        private int takeStack = 1;
         public static VInventory Inv => Main.LocalPlayer.VIP().vInventory;
         public static Dictionary<int, List<Item>> InvItems => Inv._items;
         public IEnumerable<UIItemTex> Items => leftView.InnerUIE.Cast<UIItemTex>();
+        public IEnumerable<UIItemFilter> Filters => fbg.ChildrenElements.Cast<UIItemFilter>();
         public override void OnInitialization()
         {
             base.OnInitialization();
@@ -48,11 +53,13 @@ namespace VoidInventory.Content
             bg.Register(left);
 
             leftView = new();
-            leftView.Events.OnLeftClick += evt =>
+            leftView.Events.OnLeftDown += evt =>
             {
-                if (Main.mouseItem.type > ItemID.None && Main.mouseItem.stack > 0)
+                ref Item item = ref Main.mouseItem;
+                if (item.type > ItemID.None && item.stack > 0)
                 {
                     Inv.Merge(ref Main.mouseItem);
+                    if (item.type == focusType) RefreshRight();
                 }
             };
             left.Register(leftView);
@@ -62,25 +69,13 @@ namespace VoidInventory.Content
             fbg.SetPos(20, 42);
             bg.Register(fbg);
 
-            int i = 0;
-            void SetFilter(int filter)
+            int[] fs = new int[] { 0, 2, 8, 4, 7, 1, 9, 3, 6, 5, 10 };
+            for (int i = 0; i < fs.Length; i++)
             {
-                UIItemFilter filters = new(filter, this);
-                filters.SetPos(i++ * 35, 0);
+                UIItemFilter filters = new(fs[i], open => RefreshLeft(false));
+                filters.SetPos(i * 35, 0);
                 fbg.Register(filters);
-                this.filters.Add(filters);
             }
-            SetFilter(ItemFilter.Weapon);
-            SetFilter(ItemFilter.Armor);
-            SetFilter(ItemFilter.Vanity);
-            SetFilter(ItemFilter.BuildingBlock);
-            SetFilter(ItemFilter.Furniture);
-            SetFilter(ItemFilter.Accessory);
-            SetFilter(ItemFilter.MiscEquip);
-            SetFilter(ItemFilter.Consumable);
-            SetFilter(ItemFilter.Tool);
-            SetFilter(ItemFilter.Material);
-            SetFilter(ItemFilter.Misc);
 
             UIPanel inputbg = new(160 + 24, 30, 12, 4, Color.White, 1f);
             inputbg.SetPos(-inputbg.Width - 20, 20 + 10, 1);
@@ -89,11 +84,7 @@ namespace VoidInventory.Content
             input = new("搜索背包物品", color: Color.Black);
             input.SetSize(-24, 0, 1, 1);
             input.SetPos(12, 2);
-            input.OnInputText += () =>
-            {
-                focusFilter = -1;
-                FindInvItem();
-            };
+            input.OnInputText += RefreshRight;
             inputbg.Register(input);
 
             VerticalScrollbar leftscroll = new(62 * 3);
@@ -108,18 +99,11 @@ namespace VoidInventory.Content
             rightView = new();
             rightView.Events.OnLeftDown += evt =>
             {
-                if (Main.mouseItem.type > ItemID.None && Main.mouseItem.stack > 0)
+                Item item = Main.mouseItem;
+                if (item.type > ItemID.None && item.stack > 0)
                 {
                     Inv.Merge(ref Main.mouseItem);
-                    ReFreshRight();
-                }
-            };
-            rightView.Events.OnUpdate += evt =>
-            {
-                if (rightView.InnerUIE.Count == 0)
-                {
-                    leftView.InnerUIE.RemoveAll(x => x is UIItemTex tex && tex.ContainedItem.type == focusType);
-                    focusType = 0;
+                    if (item.type == focusType) RefreshRight();
                 }
             };
             right.Register(rightView);
@@ -149,44 +133,51 @@ namespace VoidInventory.Content
                 RefreshLeft();
             }
         }
+        public override void OnSaveAndQuit()
+        {
+            RemoveAll();
+        }
         /// <summary>
         /// 刷新物品索引背包
         /// </summary>
         /// <param name="sortOnly">是否仅排序</param>
         public void RefreshLeft(bool sortOnly = true)
         {
-            if (sortOnly)
+            if (leftView != null)
             {
-                int x = 0, y = 0;
-                foreach (UIItemTex item in Items)
+                if (sortOnly)
                 {
-                    item.SetPos(x, y);
-                    x += 56;
-                    if (x + 56 > leftView.InnerWidth)
+                    int x = 0, y = 0;
+                    foreach (UIItemTex item in Items)
                     {
-                        x = 0;
-                        y += 56;
+                        item.SetPos(x, y);
+                        x += 56;
+                        if (x + 56 > leftView.InnerWidth)
+                        {
+                            x = 0;
+                            y += 56;
+                        }
                     }
                 }
-            }
-            else
-            {
-                List<int> hasItems = Items.Select(i => i.ContainedItem.type).ToList();
-                List<int> nowItems = InvItems.Keys.ToList();
-                var remove = hasItems.Except(nowItems);
-                var add = nowItems.Except(hasItems);
-                leftView.InnerUIE.RemoveAll(i => i is UIItemTex t && remove.Contains(t.ContainedItem.type));
-                foreach (int itemType in add)
+                else
                 {
-                    RegisterIndexUI(itemType);
+                    List<int> hasItems = Items.Select(i => i.ContainedItem.type).ToList();
+                    List<int> nowItems = InvItems.Keys.ToList();
+                    var remove = hasItems.Except(nowItems);
+                    var add = nowItems.Except(hasItems);
+                    leftView.InnerUIE.RemoveAll(i => i is UIItemTex t && remove.Contains(t.ContainedItem.type));
+                    foreach (int itemType in add)
+                    {
+                        RegisterIndexUI(itemType);
+                    }
+                    RefreshLeft();
                 }
-                RefreshLeft();
             }
         }
         /// <summary>
         /// 刷新实例背包，会重新注册UI
         /// </summary>
-        public void ReFreshRight()
+        public void RefreshRight()
         {
             if (focusType == 0) return;
             rightView.ClearAllElements();
@@ -197,10 +188,128 @@ namespace VoidInventory.Content
                 UIItemSlot slot = new(item)
                 {
                     CanTakeOutSlot = new(x => true),
+                    CanPutInSlot = new(x => true),
+                    id = count
+                };
+                slot.Events.OnUpdate += evt => TakeItemWithRight(slot);
+                slot.Events.OnRightDown += evt =>
+                {
+                    takeTime = 0;
+                    takeSpeed = 10;
+                    takeStack = 1;
+                    taking = true;
+                };
+                slot.Events.OnMouseOut += evt =>
+                {
+                    if (taking)
+                    {
+                        taking = false;
+                        slot.ExchangeItem();
+                    }
+                };
+                slot.Events.OnRightUp += evt =>
+                {
+                    if (taking)
+                    {
+                        taking = false;
+                        slot.ExchangeItem();
+                    }
+                };
+                slot.PostExchangeItem += evt =>
+                {
+                    List<Item> target = InvItems[focusType];
+                    if (slot.ContainedItem.IsAir)
+                    {
+                        target.RemoveAt(slot.id);
+                    }
+                    else
+                    {
+                        if (slot.BackItem.IsAir)
+                        {
+                            target.Insert(slot.id, slot.ContainedItem);
+                        }
+                        else
+                        {
+                            target[slot.id] = slot.ContainedItem;
+                        }
+
+                    }
+                    Main.NewText(string.Join("\n", InvItems[focusType]));
                 };
                 slot.SetPos(count % 6 * 56, count / 6 * 56);
                 rightView.AddElement(slot);
                 count++;
+            }
+        }
+        private void TakeItemWithRight(UIItemSlot slot)
+        {
+            if (taking)
+            {
+                Item item = slot.ContainedItem;
+                ref Item i = ref Main.mouseItem;
+                if (i.type == ItemID.None)
+                {
+                    i = item.Clone();
+                    i.stack = 1;
+                    item.stack--;
+                    if (item.stack == 0)
+                    {
+                        item.SetDefaults();
+                        taking = false;
+                        return;
+                    }
+                }
+                else if (i.type == item.type)
+                {
+                    if ((takeSpeed == 0 || (takeTime % takeSpeed == 0 && takeSpeed < 10)) && i.stack < i.maxStack && item.stack > 0)
+                    {
+                        SoundEngine.PlaySound(SoundID.Coins);
+                        for (int j = 0; j < takeStack; j++)
+                        {
+                            i.stack++;
+                            item.stack--;
+                            if (i.stack == i.maxStack || item.stack == 0)
+                            {
+                                taking = false;
+                                if (item.stack == 0)
+                                {
+                                    item.SetDefaults();
+                                }
+                                return;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        taking = false;
+                        return;
+                    }
+
+                    if (takeSpeed > 10)
+                    {
+                        if (takeTime >= 20)
+                        {
+                            takeSpeed--;
+                        }
+                    }
+                    else if (takeSpeed > 0)
+                    {
+                        if (takeTime >= takeSpeed * 2)
+                        {
+                            takeTime = 0;
+                            takeSpeed--;
+                        }
+                    }
+                    else
+                    {
+                        if (takeTime % 10 == 0)
+                        {
+                            takeStack++;
+                            takeTime = 0;
+                        }
+                    }
+                    takeTime++;
+                }
             }
         }
         /// <summary>
@@ -211,9 +320,12 @@ namespace VoidInventory.Content
         public void RegisterIndexUI(int type)
         {
             UIItemTex tex = new(type);
-            if (focusFilter > -1 && !filters[focusFilter].GetFilter()(tex.ContainedItem))
+            foreach (UIItemFilter filter in Filters)
             {
-                return;
+                if (filter.Open && !filter.GetFilter()(tex.ContainedItem))
+                {
+                    return;
+                }
             }
             if (input.Text.Length > 0 && !input.Text.Contains(tex.ContainedItem.Name))
             {
@@ -222,18 +334,9 @@ namespace VoidInventory.Content
             tex.Events.OnLeftDown += evt =>
             {
                 focusType = tex.ContainedItem.type;
-                ReFreshRight();
+                RefreshRight();
             };
             leftView.AddElement(tex);
-        }
-        public void FindInvItem()
-        {
-            leftView.ClearAllElements();
-            foreach (int key in Inv.Filter(item => input.Text.Length == 0 || item.Name.Contains(input.Text)))
-            {
-                RegisterIndexUI(key);
-            }
-            RefreshLeft();
         }
     }
 }

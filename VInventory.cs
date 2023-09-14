@@ -1,11 +1,8 @@
 ﻿using System.Linq;
-using System.Threading.Tasks;
 using Terraria.GameContent.UI;
 using Terraria.ModLoader.IO;
 using Terraria.UI;
 using VoidInventory.Content;
-using Terraria.ID;
-using Terraria;
 
 namespace VoidInventory
 {
@@ -14,13 +11,10 @@ namespace VoidInventory
         internal Dictionary<int, List<Item>> _items = new();
         internal List<RecipeTask> recipeTasks = new();
         internal static int tryDelay;
-        /// <summary>
-        /// 如果此值为True，UI应当不可交互
-        /// </summary>
-        internal bool Updating;
         private Dictionary<int, int> tileMap = new();
         internal bool HasWater, HasLava, HasHoney, HasShimmer;
-        internal static bool needRefreshInv, needRefreshRT;
+        internal static bool needRefreshInv;
+        internal static VIUI VI => VIUI.VI;
         static VInventory()
         {
         }
@@ -47,16 +41,7 @@ namespace VoidInventory
                 MergeAllInInventory();
                 tryDelay = 0;
             }
-            if (needRefreshInv)
-            {
-                needRefreshInv = false;
-                RefreshInvUI();
-            }
-            if (needRefreshRT)
-            {
-                needRefreshRT = false;
-                RefreshTaskUI();
-            }
+            Reversal(ref needRefreshInv, true, (open) => VI.RefreshLeft(false));
         }
         /// <summary>
         /// 合并物品
@@ -70,7 +55,6 @@ namespace VoidInventory
         }
         public void Merge_Inner(Item item, bool ignoreRecipe = false)
         {
-            Updating = true;
             if (HasItem(item.type, out List<Item> held))
             {
                 foreach (Item container in held)
@@ -96,44 +80,15 @@ namespace VoidInventory
             {
                 //未有该种物品，直接将拆分结果设为储存
                 _items[item.type] = SplitItems(item);
+                VI.RefreshLeft(false);
             }
             //加载物品时不进行合成尝试
             if (!ignoreRecipe)
             {
-                TryFinishRecipeTasks();
+                TryFinishRecipeTasks(ref needRefreshInv);
             }
             //清除合并线程
             tryDelay = 0;
-            //进行刷新UI的回调
-            needRefreshInv = true;
-            Updating = false;
-        }
-        internal void RefreshInvUI(Item lastItem = null)
-        {
-            if (Main.dedServ)
-            {
-                return;
-            }
-            VIUI ui = VoidInventory.Ins.uis.Elements[VIUI.NameKey] as VIUI;
-            if (ui.leftView == null) return;
-            ui.leftView.ClearAllElements();
-            if (ui.focusFilter < 0)
-            {
-                ui.FindInvItem();
-            }
-            else ui.fbg.ChildrenElements.First(x => x is UIItemFilter filter && filter.Filter == ui.focusFilter).Events.LeftDown(ui);
-            if (lastItem is not null && VIUI.focusType == lastItem.type)
-            {
-                ui.ReFreshRight();
-            }
-        }
-        internal void RefreshTaskUI()
-        {
-            RTUI ui = VoidInventory.Ins.uis.Elements[RTUI.NameKey] as RTUI;
-            if (ui is not null && ui.leftView is not null)
-            {
-                ui.LoadRT();
-            }
         }
         /// <summary>
         /// 将背包里所有物品进行合并(以压缩空间)
@@ -141,7 +96,7 @@ namespace VoidInventory
         /// </summary>
         public void MergeAllInInventory()
         {
-            Updating = true;
+            _items.RemoveAll(type => !HasItem(type, out _));
             Dictionary<int, List<Item>> buffer = _items;
             _items = new();
             foreach (List<Item> items in buffer.Values)
@@ -175,14 +130,10 @@ namespace VoidInventory
                     }
                 }
             }
-            _items.RemoveAll(type => !HasItem(type, out _));
-            TryFinishRecipeTasks();
+            TryFinishRecipeTasks(ref needRefreshInv);
             CombineCurrency();
-            needRefreshInv = true;
-            needRefreshRT = true;
-            Updating = false;
         }
-        public void MergeAll(int type, bool refreshUI = true)
+        public void MergeAll(int type)
         {
             if (!HasItem(type, out var items))
             {
@@ -213,19 +164,15 @@ namespace VoidInventory
                 }
                 else
                 {
-                    this._items[item.type] = new() { item };
+                    _items[item.type] = new() { item };
                 }
-            }
-            if(refreshUI)
-            {
-                needRefreshInv = true;
             }
         }
 
         /// <summary>
         /// 进行合成尝试
         /// </summary>
-        private void TryFinishRecipeTasks()
+        private void TryFinishRecipeTasks(ref bool refresh)
         {
             //刷新物块映射
             MapTileAsAdj();
@@ -239,8 +186,8 @@ namespace VoidInventory
                 }
                 if (reTry)
                 {
-                    TryFinishRecipeTasks();
-                    needRefreshInv = true;
+                    refresh = true;
+                    TryFinishRecipeTasks(ref refresh);
                 }
             }
         }
@@ -368,7 +315,6 @@ namespace VoidInventory
             if (tag.TryGet(nameof(recipeTasks), out TagCompound tasktag))
             {
                 recipeTasks = RecipeTask.Load(tasktag);
-                needRefreshRT = true;
             }
         }
         internal bool CountTile(int countNeed, params int[] tileNeeds)
@@ -494,7 +440,7 @@ namespace VoidInventory
                 {
                     valueMap = new()
                     {
-                        { ItemID.PlatinumCoin, 1000000 },
+                        {ItemID.PlatinumCoin, 1000000 },
                         {ItemID.GoldCoin,10000 },
                         {ItemID.SilverCoin,100 },
                         {ItemID.CopperCoin,1 }
@@ -522,6 +468,7 @@ namespace VoidInventory
                 Dictionary<int, int> used = new();
                 int HowManyCanUse(int type)
                 {
+                    if (VI.right.Info.IsVisible && VI.focusType == type) return 0;
                     if (used.ContainsKey(type))
                     {
                         return itemMap[type] - used[type];

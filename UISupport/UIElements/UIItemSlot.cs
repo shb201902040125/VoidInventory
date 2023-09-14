@@ -1,7 +1,4 @@
-﻿using System.Linq;
-using Terraria.GameInput;
-
-namespace VoidInventory.UISupport.UIElements
+﻿namespace VoidInventory.UISupport.UIElements
 {
     public delegate bool CheckPutSlotCondition(Item mouseItem);
     public delegate void ExchangeItemHandler(BaseUIElement target);
@@ -29,6 +26,7 @@ namespace VoidInventory.UISupport.UIElements
         /// 框内物品
         /// </summary>
         public Item ContainedItem { get; set; }
+        public Item BackItem { get; private set; }
         /// <summary>
         /// 框的绘制的拐角尺寸
         /// </summary>
@@ -46,24 +44,22 @@ namespace VoidInventory.UISupport.UIElements
         /// 更改物品时调用
         /// </summary>
         public event ExchangeItemHandler PostExchangeItem;
+        public void ExchangeItem() => PostExchangeItem?.Invoke(this);
         /// <summary>
         /// 玩家拿取物品时调用
         /// </summary>
         public event ExchangeItemHandler OnPickItem;
+        public void PickItem() => OnPickItem?.Invoke(this);
+
         /// <summary>
         /// 玩家放入物品时调用
         /// </summary>
         public event ExchangeItemHandler OnPutItem;
-        /// <summary>
-        /// 在部件更新时调用
-        /// </summary>
-        public event ExchangeItemHandler PostUpdate;
+        public void PutItem() => OnPutItem?.Invoke(this);
         /// <summary>
         /// 透明度
         /// </summary>
         public float Opacity { get; set; }
-        public bool RightKeepDown;
-        public int RightKeepDownTime { get;private set; }
 
         /// <param name="texture"></param>
         public UIItemSlot(Item item = null, Texture2D texture = default)
@@ -81,6 +77,107 @@ namespace VoidInventory.UISupport.UIElements
             SetSize(52, 52);
         }
         public override void LoadEvents()
+        {
+            base.LoadEvents();
+            Events.OnLeftDown += element =>
+            {
+                //当鼠标没物品，框里有物品的时候
+                BackItem = ContainedItem.Clone();
+                if (Main.mouseItem.type == ItemID.None && ContainedItem != null && ContainedItem.type != ItemID.None)
+                {
+                    //如果可以拿起物品
+                    if (CanTakeOutSlot == null || CanTakeOutSlot(ContainedItem))
+                    {
+                        //开启背包
+                        Main.playerInventory = true;
+                        //拿出物品
+                        Main.mouseItem = ContainedItem.Clone();
+                        if (!Infinity)
+                        {
+                            ContainedItem = new Item();
+                            ContainedItem.SetDefaults(0, true);
+                        }
+
+                        //调用委托
+                        PickItem();
+
+                        //触发放物品声音
+                        //SoundEngine.PlaySound(7, -1, -1, 1, 1f, 0.0f);
+                    }
+                }
+                //当鼠标有物品，框里没物品的时候
+                else if (Main.mouseItem.type != ItemID.None && (ContainedItem == null || ContainedItem.type == ItemID.None))
+                {
+                    //如果可以放入物品
+                    if (CanPutInSlot == null || CanPutInSlot(Main.mouseItem))
+                    {
+                        //放入物品
+                        ContainedItem = Main.mouseItem.Clone();
+                        Main.mouseItem = new Item();
+                        Main.mouseItem.SetDefaults(0, true);
+
+                        //调用委托
+                        PutItem();
+
+                        //触发放物品声音
+                        //SoundEngine.PlaySound(7, -1, -1, 1, 1f, 0.0f);
+                    }
+                }
+                //当鼠标和框都有物品时
+                else if (Main.mouseItem.type != ItemID.None && ContainedItem != null && ContainedItem.type != ItemID.None)
+                {
+                    //如果不能放入物品
+                    if (!(CanPutInSlot == null || CanPutInSlot(Main.mouseItem)))
+                    {
+                        //中断函数
+                        return;
+                    }
+
+                    //如果框里的物品和鼠标的相同
+                    if (Main.mouseItem.type == ContainedItem.type)
+                    {
+                        //框里的物品数量加上鼠标物品数量
+                        ContainedItem.stack += Main.mouseItem.stack;
+                        //如果框里物品数量大于数量上限
+                        if (ContainedItem.stack > ContainedItem.maxStack)
+                        {
+                            //计算鼠标物品数量，并将框内物品数量修改为数量上限
+                            int exceed = ContainedItem.stack - ContainedItem.maxStack;
+                            ContainedItem.stack = ContainedItem.maxStack;
+                            Main.mouseItem.stack = exceed;
+                        }
+                        //反之
+                        else
+                        {
+                            //清空鼠标物品
+                            Main.mouseItem = new Item();
+                        }
+                    }
+                    //如果可以放入物品也能拿出物品
+                    else if ((CanPutInSlot == null || CanPutInSlot(Main.mouseItem))
+                        && (CanTakeOutSlot == null || CanTakeOutSlot(ContainedItem)))
+                    {
+                        //交换框内物品和鼠标物品
+                        Item tmp = Main.mouseItem.Clone();
+                        Main.mouseItem = ContainedItem;
+                        ContainedItem = tmp;
+                    }
+
+                    //触发放物品声音
+                    //SoundEngine.PlaySound(7, -1, -1, 1, 1f, 0.0f);
+                }
+                //反之
+                else
+                {
+                    //中断函数
+                    return;
+                }
+
+                //调用委托
+                ExchangeItem();
+            };
+        }
+        /*public override void LoadEvents()
         {
             base.LoadEvents();
             Events.OnLeftClick += element =>
@@ -174,19 +271,9 @@ namespace VoidInventory.UISupport.UIElements
                     Info.NeedRemove = true;
                 }
             };
-        }
+        }*/
         public override void Update(GameTime gameTime)
         {
-            if(RightKeepDown)
-            {
-                RightKeepDownTime++;
-            }
-            else
-            {
-                RightKeepDownTime = 0;
-            }
-            RightKeepDown = false;
-            PostUpdate?.Invoke(this);
             base.Update(gameTime);
         }
 
