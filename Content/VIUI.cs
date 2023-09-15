@@ -209,6 +209,7 @@ namespace VoidInventory.Content
                 slot.Events.OnRightDown += evt =>
                 {
                     ref Item i = ref Main.mouseItem;
+                    if (i.stack == i.maxStack) return;
                     Item s = slot.ContainedItem;
                     if (!s.IsAir && (i.IsAir || s.type == i.type))
                     {
