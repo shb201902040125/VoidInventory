@@ -126,7 +126,7 @@ namespace VoidInventory.Content
             }
             if (focusType > 0)
             {
-                Main.NewText(InvItems[focusType].Count);
+                //Main.NewText(InvItems[focusType].Count);
             }
         }
         public override void OnSaveAndQuit()
