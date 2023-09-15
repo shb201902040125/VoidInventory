@@ -171,6 +171,9 @@
                         ContainedItem = tmp;
                     }
 
+                    //调用委托
+                    ExchangeItem();
+
                     //触发放物品声音
                     //SoundEngine.PlaySound(7, -1, -1, 1, 1f, 0.0f);
                 }
@@ -180,9 +183,6 @@
                     //中断函数
                     return;
                 }
-
-                //调用委托
-                ExchangeItem();
             };
         }
         /*public override void LoadEvents()

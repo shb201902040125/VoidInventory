@@ -278,6 +278,10 @@ namespace VoidInventory.Content
                         target[slot.id] = slot.ContainedItem;
                     }
                 };
+                slot.PostExchangeItem += evt =>
+                {
+                    InvItems[focusType][slot.id] = slot.ContainedItem;
+                };
                 slot.SetPos(count % 6 * 56, count / 6 * 56);
                 rightView.AddElement(slot);
                 count++;
