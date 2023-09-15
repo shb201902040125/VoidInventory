@@ -296,7 +296,7 @@
             //绘制物品框
             DrawAdvBox(sb, DrawRectangle.X, DrawRectangle.Y, 52, 52,
                 DrawColor * Opacity, SlotBackTexture, CornerSize, 1f);
-            if (ContainedItem != null && ContainedItem.type != ItemID.None)
+            if (ContainedItem?.IsAir == false)
             {
                 Rectangle frame = Main.itemAnimations[ContainedItem.type] != null ? Main.itemAnimations[ContainedItem.type]
                     .GetFrame(TextureAssets.Item[ContainedItem.type].Value) : Item.GetDrawHitbox(ContainedItem.type, null);
@@ -324,7 +324,7 @@
         /// <param name="img"></param>
         /// <param name="size4"></param>
         /// <param name="scale"></param>
-        public void DrawAdvBox(SpriteBatch sp, int x, int y, int w, int h, Color c, Texture2D img, Vector2 size4, float scale = 1f)
+        private static void DrawAdvBox(SpriteBatch sp, int x, int y, int w, int h, Color c, Texture2D img, Vector2 size4, float scale = 1f)
         {
             Texture2D box = img;
             int nw = (int)(w * scale);

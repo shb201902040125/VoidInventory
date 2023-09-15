@@ -273,5 +273,10 @@ namespace VoidInventory
                 action?.Invoke(flag);
             }
         }
+        public static bool NullCheck(this object obj, bool flag)
+        {
+            if(obj==null) return false;
+            return flag;
+        }
     }
 }

@@ -96,14 +96,13 @@ namespace VoidInventory
         /// </summary>
         public void MergeAllInInventory()
         {
-            _items.RemoveAll(type => !HasItem(type, out _));
             Dictionary<int, List<Item>> buffer = _items;
             _items = new();
             foreach (List<Item> items in buffer.Values)
             {
                 foreach (Item item in items)
                 {
-                    if (HasItem(item.type, out List<Item> held))
+                    if (item.type != VI.focusType && HasItem(item.type, out List<Item> held))
                     {
                         foreach (Item container in held)
                         {
@@ -130,6 +129,7 @@ namespace VoidInventory
                     }
                 }
             }
+            _items.RemoveAll(type => !HasItem(type, out _));
             TryFinishRecipeTasks(ref needRefreshInv);
             CombineCurrency();
         }

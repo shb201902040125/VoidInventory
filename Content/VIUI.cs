@@ -55,11 +55,12 @@ namespace VoidInventory.Content
             leftView = new();
             leftView.Events.OnLeftDown += evt =>
             {
-                ref Item item = ref Main.mouseItem;
+                Item item = Main.mouseItem;
                 if (item.type > ItemID.None && item.stack > 0)
                 {
                     Inv.Merge(ref Main.mouseItem);
-                    if (item.type == focusType) RefreshRight();
+                    if (item.type == focusType)
+                        RefreshRight();
                 }
             };
             left.Register(leftView);
@@ -97,15 +98,6 @@ namespace VoidInventory.Content
             bg.Register(right);
 
             rightView = new();
-            rightView.Events.OnLeftDown += evt =>
-            {
-                Item item = Main.mouseItem;
-                if (item.type > ItemID.None && item.stack > 0)
-                {
-                    Inv.Merge(ref Main.mouseItem);
-                    if (item.type == focusType) RefreshRight();
-                }
-            };
             right.Register(rightView);
 
             VerticalScrollbar rightscroll = new(62 * 3);
@@ -131,6 +123,10 @@ namespace VoidInventory.Content
                 Reversal(ref right.Info.IsVisible, true);
                 left.Calculation();
                 RefreshLeft();
+            }
+            if (focusType > 0)
+            {
+                Main.NewText(InvItems[focusType].Count);
             }
         }
         public override void OnSaveAndQuit()
@@ -184,27 +180,47 @@ namespace VoidInventory.Content
             int count = 0;
             foreach (Item item in InvItems[focusType])
             {
-                if (item.stack <= 0) continue;
+                if (item.IsAir) continue;
                 UIItemSlot slot = new(item)
                 {
                     CanTakeOutSlot = new(x => true),
-                    CanPutInSlot = new(x => true),
-                    id = count
+                    CanPutInSlot = new(x => x.type == focusType),
                 };
                 slot.Events.OnUpdate += evt => TakeItemWithRight(slot);
                 slot.Events.OnRightDown += evt =>
                 {
-                    takeTime = 0;
-                    takeSpeed = 10;
-                    takeStack = 1;
-                    taking = true;
+                    ref Item i = ref Main.mouseItem;
+                    Item s = slot.ContainedItem;
+                    if (!s.IsAir && (i.IsAir || s.type == i.type))
+                    {
+                        Reversal(ref Main.playerInventory, false);
+                        if (i.IsAir)
+                        {
+                            i = s.Clone();
+                            i.stack = 1;
+                        }
+                        else
+                        {
+                            i.stack++;
+                        }
+                        s.stack--;
+                        if (s.IsAir)
+                        {
+                            slot.PickItem();
+                            return;
+                        }
+                        takeTime = 0;
+                        takeSpeed = 10;
+                        takeStack = 1;
+                        taking = true;
+                    }
                 };
                 slot.Events.OnMouseOut += evt =>
                 {
                     if (taking)
                     {
                         taking = false;
-                        slot.ExchangeItem();
+                        slot.PickItem();
                     }
                 };
                 slot.Events.OnRightUp += evt =>
@@ -212,29 +228,36 @@ namespace VoidInventory.Content
                     if (taking)
                     {
                         taking = false;
-                        slot.ExchangeItem();
+                        slot.PickItem();
                     }
                 };
-                slot.PostExchangeItem += evt =>
+                slot.OnPickItem += evt =>
                 {
                     List<Item> target = InvItems[focusType];
+                    // 拿走了全部物品，直接移除
                     if (slot.ContainedItem.IsAir)
                     {
                         target.RemoveAt(slot.id);
                     }
+                    // 没拿走全部，刷新存储的物品
                     else
                     {
-                        if (slot.BackItem.IsAir)
-                        {
-                            target.Insert(slot.id, slot.ContainedItem);
-                        }
-                        else
-                        {
-                            target[slot.id] = slot.ContainedItem;
-                        }
-
+                        target[slot.id] = slot.ContainedItem;
                     }
-                    Main.NewText(string.Join("\n", InvItems[focusType]));
+                };
+                slot.OnPutItem += evt =>
+                {
+                    List<Item> target = InvItems[focusType];
+                    // 放入时原本没有物品，则在对应索引插入当前物品
+                    if (slot.BackItem.IsAir)
+                    {
+                        target.Insert(slot.id, slot.ContainedItem);
+                    }
+                    // 放入时原本有物品
+                    else
+                    {
+                        target[slot.id] = slot.ContainedItem;
+                    }
                 };
                 slot.SetPos(count % 6 * 56, count / 6 * 56);
                 rightView.AddElement(slot);
@@ -243,73 +266,54 @@ namespace VoidInventory.Content
         }
         private void TakeItemWithRight(UIItemSlot slot)
         {
-            if (taking)
+            if (taking && slot.Info.IsMouseHover)
             {
-                Item item = slot.ContainedItem;
+                Item item = InvItems[focusType][slot.id];
                 ref Item i = ref Main.mouseItem;
-                if (i.type == ItemID.None)
+                if (takeSpeed == 0 || (takeTime % takeSpeed == 0 && takeSpeed < 10))
                 {
-                    i = item.Clone();
-                    i.stack = 1;
-                    item.stack--;
-                    if (item.stack == 0)
+                    SoundEngine.PlaySound(SoundID.Coins);
+                    for (int j = 0; j < takeStack; j++)
                     {
-                        item.SetDefaults();
-                        taking = false;
-                        return;
-                    }
-                }
-                else if (i.type == item.type)
-                {
-                    if ((takeSpeed == 0 || (takeTime % takeSpeed == 0 && takeSpeed < 10)) && i.stack < i.maxStack && item.stack > 0)
-                    {
-                        SoundEngine.PlaySound(SoundID.Coins);
-                        for (int j = 0; j < takeStack; j++)
+                        if (i.stack == i.maxStack || item.stack == 0)
                         {
-                            i.stack++;
-                            item.stack--;
-                            if (i.stack == i.maxStack || item.stack == 0)
+                            taking = false;
+                            if (item.stack == 0)
                             {
-                                taking = false;
-                                if (item.stack == 0)
-                                {
-                                    item.SetDefaults();
-                                }
-                                return;
+                                item.SetDefaults();
                             }
+                            slot.PickItem();
+                            return;
                         }
+                        i.stack++;
+                        item.stack--;
                     }
-                    else
-                    {
-                        taking = false;
-                        return;
-                    }
-
-                    if (takeSpeed > 10)
-                    {
-                        if (takeTime >= 20)
-                        {
-                            takeSpeed--;
-                        }
-                    }
-                    else if (takeSpeed > 0)
-                    {
-                        if (takeTime >= takeSpeed * 2)
-                        {
-                            takeTime = 0;
-                            takeSpeed--;
-                        }
-                    }
-                    else
-                    {
-                        if (takeTime % 10 == 0)
-                        {
-                            takeStack++;
-                            takeTime = 0;
-                        }
-                    }
-                    takeTime++;
                 }
+
+                if (takeSpeed > 10)
+                {
+                    if (takeTime >= 20)
+                    {
+                        takeSpeed--;
+                    }
+                }
+                else if (takeSpeed > 0)
+                {
+                    if (takeTime >= takeSpeed * 2)
+                    {
+                        takeTime = 0;
+                        takeSpeed--;
+                    }
+                }
+                else
+                {
+                    if (takeTime % 10 == 0)
+                    {
+                        takeStack++;
+                        takeTime = 0;
+                    }
+                }
+                takeTime++;
             }
         }
         /// <summary>

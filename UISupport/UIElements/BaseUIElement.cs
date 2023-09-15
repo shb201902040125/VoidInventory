@@ -551,6 +551,7 @@
             element.ParentElement = this;
             element.OnInitialization();
             element.Calculation();
+            element.id = ChildrenElements.Count;
             ChildrenElements.Add(element);
             return true;
         }
@@ -569,6 +570,13 @@
 
             element.ParentElement = null;
             ChildrenElements.Remove(element);
+            ChildrenElements.ForEach(x =>
+            {
+                if (x.id > element.id)
+                {
+                    x.id--;
+                }
+            });
             return true;
         }
 
@@ -666,7 +674,6 @@
             {
                 elements.Add(this);
             }
-
             return elements;
         }
 
