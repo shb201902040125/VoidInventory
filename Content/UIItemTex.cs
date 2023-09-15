@@ -23,7 +23,6 @@
         /// 透明度
         /// </summary>
         public float Opacity { get; set; }
-        public int id;
         public UIItemTex(int itemType, Texture2D texture = default)
         {
             Opacity = 1f;
@@ -37,20 +36,14 @@
         public override void DrawSelf(SpriteBatch sb)
         {
             base.DrawSelf(sb);
-
-            //float scale = Info.Size.X / 52f;
-            DynamicSpriteFont font = FontAssets.MouseText.Value;
-            //调用原版的介绍绘制
             if (Info.IsMouseHover && ContainedItem != null && ContainedItem.type != ItemID.None)
             {
                 Main.hoverItemName = ContainedItem.Name;
                 Main.HoverItem = ContainedItem.Clone();
             }
-            //获取当前UI部件的信息
             Rectangle DrawRectangle = Info.TotalHitBox;
             DrawRectangle.Width = 52;
             DrawRectangle.Height = 52;
-            //绘制物品框
             DrawAdvBox(sb, DrawRectangle.X, DrawRectangle.Y, 52, 52,
                 DrawColor * Opacity, SlotBackTexture, CornerSize, 1f);
             if (ContainedItem != null && ContainedItem.type != ItemID.None)
@@ -61,7 +54,6 @@
                 sb.Draw(TextureAssets.Item[ContainedItem.type].Value, new Vector2(DrawRectangle.X + (DrawRectangle.Width / 2),
                     DrawRectangle.Y + (DrawRectangle.Height / 2)), frame, Color.White * Opacity, 0f,
                     new Vector2(frame.Width, frame.Height) / 2f, 1 * frame.AutoScale(), 0, 0);
-                //sb.DrawString(font, ContainedItem.stack.ToString(), new Vector2(DrawRectangle.X + 10, DrawRectangle.Y + DrawRectangle.Height - 20), StackColor * Opacity, 0f, Vector2.Zero, 0.8f, SpriteEffects.None, 0f);
             }
         }
         /// <summary>
@@ -74,9 +66,9 @@
         /// <param name="h"></param>
         /// <param name="c"></param>
         /// <param name="img"></param>
-        /// <param name="size4"></param>
+        /// <param name="size"></param>
         /// <param name="scale"></param>
-        public void DrawAdvBox(SpriteBatch sp, int x, int y, int w, int h, Color c, Texture2D img, Vector2 size4, float scale = 1f)
+        public static void DrawAdvBox(SpriteBatch sp, int x, int y, int w, int h, Color c, Texture2D img, Vector2 size, float scale = 1f)
         {
             Texture2D box = img;
             int nw = (int)(w * scale);
@@ -85,13 +77,13 @@
             y += (h - nh) / 2;
             w = nw;
             h = nh;
-            int width = (int)size4.X;
-            int height = (int)size4.Y;
-            if (w < size4.X)
+            int width = (int)size.X;
+            int height = (int)size.Y;
+            if (w < size.X)
             {
                 w = width;
             }
-            if (h < size4.Y)
+            if (h < size.Y)
             {
                 h = width;
             }

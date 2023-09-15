@@ -137,7 +137,7 @@
                     //如果框里的物品和鼠标的相同
                     if (mi.type == ContainedItem.type)
                     {
-                        if (ItemLoader.CanStack(mi, ContainedItem))
+                        if (mi.stack == mi.maxStack || ContainedItem.stack == ContainedItem.maxStack)
                         {
                             (mi, ContainedItem) = (ContainedItem, mi);
                         }
