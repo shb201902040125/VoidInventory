@@ -126,7 +126,7 @@ namespace VoidInventory.Content
             }
             if (focusType > 0)
             {
-                //Main.NewText(InvItems[focusType].Count);
+                Main.NewText((InvItems.Count, InvItems[focusType].Count));
             }
         }
         public override void OnSaveAndQuit()
@@ -355,7 +355,7 @@ namespace VoidInventory.Content
                     }
                 }
             }
-            else  filter = true; 
+            else filter = true;
             if (!filter) return;
             if (input.Text.Length > 0 && !tex.ContainedItem.Name.Contains(input.Text))
             {

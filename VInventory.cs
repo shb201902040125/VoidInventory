@@ -102,8 +102,12 @@ namespace VoidInventory
             {
                 foreach (Item item in items)
                 {
-                    if (item.type != VI.focusType) continue;
-                    if (  HasItem(item.type, out List<Item> held))
+                    if (item.type == VI.focusType)
+                    {
+                        _items[item.type] = buffer[item.type];
+                        continue;
+                    }
+                    if (HasItem(item.type, out List<Item> held))
                     {
                         foreach (Item container in held)
                         {
