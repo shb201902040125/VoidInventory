@@ -73,7 +73,7 @@ namespace VoidInventory.Content
             int[] fs = new int[] { 0, 2, 8, 4, 7, 1, 9, 3, 6, 5, 10 };
             for (int i = 0; i < fs.Length; i++)
             {
-                UIItemFilter filters = new(fs[i], open => RefreshLeft(false));
+                UIItemFilter filters = new(fs[i], open => RefreshLeft(null));
                 filters.SetPos(i * 35, 0);
                 fbg.Register(filters);
             }
@@ -85,7 +85,7 @@ namespace VoidInventory.Content
             input = new("搜索背包物品", color: Color.Black);
             input.SetSize(-24, 0, 1, 1);
             input.SetPos(12, 2);
-            input.OnInputText += RefreshRight;
+            input.OnInputText += () => RefreshLeft(null);
             inputbg.Register(input);
 
             VerticalScrollbar leftscroll = new(62 * 3);
@@ -136,12 +136,44 @@ namespace VoidInventory.Content
         /// <summary>
         /// 刷新物品索引背包
         /// </summary>
-        /// <param name="sortOnly">是否仅排序</param>
-        public void RefreshLeft(bool sortOnly = true)
+        /// <param name="sortOnly">true排序，false变动，null筛选</param>
+        public void RefreshLeft(bool? sortOnly = true)
         {
             if (leftView != null)
             {
-                if (sortOnly)
+                if (sortOnly is null or false)
+                {
+                    List<Predicate<Item>> matchs = new();
+                    foreach (UIItemFilter f in Filters)
+                    {
+                        if (f.Open)
+                        {
+                            matchs.Add(f.GetFilter());
+                        }
+                    }
+                    if (sortOnly == null)
+                    {
+                        leftView.ClearAllElements();
+                        foreach (int itemType in InvItems.Keys)
+                        {
+                            RegisterIndexUI(itemType, matchs);
+                        }
+                    }
+                    else
+                    {
+                        List<int> hasItems = Items.Select(i => i.ContainedItem.type).ToList();
+                        List<int> nowItems = InvItems.Keys.ToList();
+                        var remove = hasItems.Except(nowItems);
+                        var add = nowItems.Except(hasItems);
+                        leftView.InnerUIE.RemoveAll(i => i is UIItemTex t && remove.Contains(t.ContainedItem.type));
+                        foreach (int itemType in add)
+                        {
+                            RegisterIndexUI(itemType, matchs);
+                        }
+                    }
+                    RefreshLeft();
+                }
+                else
                 {
                     int x = 0, y = 0;
                     foreach (UIItemTex item in Items)
@@ -154,19 +186,6 @@ namespace VoidInventory.Content
                             y += 56;
                         }
                     }
-                }
-                else
-                {
-                    List<int> hasItems = Items.Select(i => i.ContainedItem.type).ToList();
-                    List<int> nowItems = InvItems.Keys.ToList();
-                    var remove = hasItems.Except(nowItems);
-                    var add = nowItems.Except(hasItems);
-                    leftView.InnerUIE.RemoveAll(i => i is UIItemTex t && remove.Contains(t.ContainedItem.type));
-                    foreach (int itemType in add)
-                    {
-                        RegisterIndexUI(itemType);
-                    }
-                    RefreshLeft();
                 }
             }
         }
@@ -321,17 +340,24 @@ namespace VoidInventory.Content
         /// 过不了当前筛选不注册
         /// </summary>
         /// <param name="type"></param>
-        public void RegisterIndexUI(int type)
+        public void RegisterIndexUI(int type, List<Predicate<Item>> matchs)
         {
             UIItemTex tex = new(type);
-            foreach (UIItemFilter filter in Filters)
+            bool filter = false;
+            if (matchs.Any())
             {
-                if (filter.Open && !filter.GetFilter()(tex.ContainedItem))
+                foreach (Predicate<Item> match in matchs)
                 {
-                    return;
+                    if (match(tex.ContainedItem))
+                    {
+                        filter = true;
+                        break;
+                    }
                 }
             }
-            if (input.Text.Length > 0 && !input.Text.Contains(tex.ContainedItem.Name))
+            else  filter = true; 
+            if (!filter) return;
+            if (input.Text.Length > 0 && !tex.ContainedItem.Name.Contains(input.Text))
             {
                 return;
             }

@@ -62,8 +62,8 @@ namespace VoidInventory.Content
         {
             Events.OnLeftDown += evt =>
             {
-                FilterEvent.Invoke(Open);
                 Reversal(ref open);
+                FilterEvent.Invoke(Open);
             };
         }
         public Predicate<Item> GetFilter()
@@ -87,7 +87,7 @@ namespace VoidInventory.Content
         public override void DrawSelf(SpriteBatch sb)
         {
             SimpleDraw(sb, Tex, HitBox().TopLeft(), Filter > 10 ? null : new(Filter * 30, 0, 30, 30),
-                Vector2.Zero, null, open ? Color.Gold.SetAlpha(150) : Color.White);
+                Vector2.Zero, null, open ? Color.Gold.SetAlpha(100) : Color.White);
             if (Info.IsMouseHover) Main.hoverItemName = prompt;
         }
     }
