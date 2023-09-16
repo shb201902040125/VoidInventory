@@ -4,54 +4,40 @@ namespace VoidInventory.UISupport.UIElements
 {
     public class HorizontalScrollbar : BaseUIElement
     {
+        public bool useScrollWheel = true;
+        public bool drawBorder = true;
         private readonly Texture2D Tex;
         private readonly Texture2D innerTex;
         private Rectangle InnerRec;
+        private bool isMouseDown = false;
+        private int scissor;
+        private int waitW;
+        private int whell = 0;
+        private float alpha = 0f;
         private float mouseX;
         private float innerX;
-        private Vector2 mapping;
-        private float realWheelValue;
-        public int? WheelPixel;
-        public float RealWheelValue
-        {
-            get { return realWheelValue; }
-            set { realWheelValue = Math.Clamp(value, 0, 1); }
-        }
-        private int whell = 0;
-        private bool isMouseDown = false;
-        private float alpha = 0f;
-        private float waitToWheelValue = 0f;
-        public float WaitToWhellValue
-        {
-            get => waitToWheelValue;
-            set => waitToWheelValue = Math.Clamp(value, 0, 1);
-        }
-        public bool UseScrollWheel = false;
-        private int scissor;
-        public UIContainerPanel View { get; set; }
-        public float ViewMovableX => View.MovableSize.X;
         private float oldMovableX;
-        public float WheelValue
-        {
-            get { return Math.Clamp(realWheelValue, 0, 1); }
-            set
-            {
-                waitToWheelValue = Math.Clamp(value, 0, 1);
-            }
-        }
-        public HorizontalScrollbar(int? wheelPixel = 52, float wheelValue = 0f)
+        private float real;
+        private float wait = 0f;
+        private Vector2 mapping;
+        public int? WheelPixel { get; private set; }
+        public float WheelValue => real;
+        public float ViewMovableX => View.MovableSize.X;
+        public UIContainerPanel View { get; set; }
+        public HorizontalScrollbar(int? wheelPixel = 52, bool drawBorder = false)
         {
             Info.Height.Set(20f, 0f);
-            Info.Top.Set(-20f, 1f);
-            Info.Width.Set(-20f, 1f);
-            Info.Left.Set(10f, 0f);
+            Info.Top.Set(-(drawBorder ? 30 : 25), 1f);
+            Info.Width.Set(-30f, 1f);
+            Info.Left.Set(15f, 0f);
             Info.LeftMargin.Pixel = 5f;
             Info.RightMargin.Pixel = 5f;
             Info.IsSensitive = true;
             Tex = T2D("Terraria/Images/UI/Scrollbar");
             innerTex = T2D("VoidInventory/UISupport/Asset/ScrollbarInner");
             WheelPixel = wheelPixel;
-            WheelValue = wheelValue;
+            this.drawBorder = drawBorder;
+            SetScissor(6);
         }
         public void SetScissor(int scissor) => this.scissor = scissor;
         public override void OnInitialization()
@@ -59,10 +45,6 @@ namespace VoidInventory.UISupport.UIElements
             base.OnInitialization();
             Calculation();
             InnerRec = HitBox(false);
-        }
-        public void CalculateBarLength()
-        {
-            InnerRec.Width = (int)(InnerHeight * (InnerWidth / (ViewMovableX + InnerWidth)));
         }
         public override void LoadEvents()
         {
@@ -72,8 +54,29 @@ namespace VoidInventory.UISupport.UIElements
                 if (!isMouseDown)
                 {
                     isMouseDown = true;
-                    innerX = Main.MouseScreen.X - InnerRec.X;
-                    mapping = new(InnerLeft + innerX, InnerLeft + InnerWidth - InnerRec.Width + innerX);
+                    int recW = InnerRec.Width;
+                    int mx = Main.mouseX;
+                    int left = InnerLeft;
+                    if (!InnerRec.Contains(Main.MouseScreen.ToPoint()))
+                    {
+                        if (mx < left + recW / 2f)
+                        {
+                            innerX = mx - left;
+                        }
+                        else if (mx > InnerRight - recW / 2f)
+                        {
+                            innerX = mx - (InnerBottom - recW);
+                        }
+                        else
+                        {
+                            innerX = recW / 2f;
+                        }
+                    }
+                    else
+                    {
+                        innerX = mx - InnerRec.Y;
+                    }
+                    mapping = new(left + innerX, left + InnerWidth - recW + innerX);
                 }
             };
             Events.OnLeftUp += element => isMouseDown = false;
@@ -86,7 +89,7 @@ namespace VoidInventory.UISupport.UIElements
                 return;
             }
             bool isMouseHover = ParentElement.GetCanHitBox().Contains(Main.MouseScreen.ToPoint());
-            if ((isMouseHover || isMouseDown) && alpha < 1f)
+            if (ViewMovableX > 0 && (isMouseHover || isMouseDown) && alpha < 1f)
             {
                 alpha += 0.04f;
             }
@@ -96,67 +99,66 @@ namespace VoidInventory.UISupport.UIElements
                 alpha -= 0.04f;
             }
             MouseState state = Mouse.GetState();
-            float width = Info.Size.X - 26f;
             if (!isMouseHover)
             {
                 whell = state.ScrollWheelValue;
             }
-
-            if (UseScrollWheel && isMouseHover && whell != state.ScrollWheelValue)
+            if (ViewMovableX > 0)
             {
-                if (WheelPixel.HasValue)
+                if (useScrollWheel && isMouseHover && whell != state.ScrollWheelValue)
                 {
-                    WheelValue -= WheelPixel.Value / ViewMovableX * Math.Sign(state.ScrollWheelValue - whell);
+                    if (WheelPixel.HasValue)
+                    {
+                        wait -= WheelPixel.Value / ViewMovableX * Math.Sign(state.ScrollWheelValue - whell);
+                    }
+                    else
+                    {
+                        wait -= (state.ScrollWheelValue - whell) / 10f / (Info.Size.X - 26f);
+                    }
+                    whell = state.ScrollWheelValue;
+                }
+                if (isMouseDown && mouseX != Main.mouseX && ViewMovableX > 0)
+                {
+                    wait = Utils.GetLerpValue(mapping.X, mapping.Y, Main.mouseX, true);
+                    mouseX = Main.mouseX;
+                }
+            }
+            waitW = (int)(InnerWidth * (InnerWidth / (ViewMovableX + InnerWidth)));
+            if (oldMovableX != ViewMovableX)
+            {
+                if (oldMovableX == 0 || ViewMovableX == 0) real = 0;
+                else real /= ViewMovableX / oldMovableX;
+                real = Math.Clamp(real, 0f, 1f);
+                wait = real;
+                oldMovableX = ViewMovableX;
+            }
+            wait = Math.Clamp(wait, 0f, 1f);
+            InnerRec = InnerRec.Order(InnerLeft + (int)(real * (InnerWidth - waitW)), InnerTop);
+
+            if (InnerRec.Width != waitW)
+            {
+                int d = waitW - InnerRec.Height;
+                if (d > 0)
+                {
+                    d = Math.Max(1, (int)(d * 0.2f));
                 }
                 else
                 {
-                    WheelValue -= (state.ScrollWheelValue - whell) / 10f / width;
+                    d = Math.Min(-1, (int)(d * 0.2f));
                 }
-
-                whell = state.ScrollWheelValue;
+                InnerRec.Width += d;
             }
-            if (isMouseDown && mouseX != Main.mouseX && ViewMovableX > 0)
+            if (wait != real)
             {
-                //WheelValue = (Main.mouseX - Info.Location.X - 13f) / width * 2;
-                WheelValue = Utils.GetLerpValue(mapping.X, mapping.Y, Main.mouseX, true);
-                mouseX = Main.mouseX;
-            }
-
-            RealWheelValue = (Math.Clamp(WaitToWhellValue - RealWheelValue, -1, 1) / 6f) + RealWheelValue;
-            if ((int)(WaitToWhellValue * 100) / 100f != (int)(RealWheelValue * 100) / 100f)
-            {
+                real += (wait - real) / 6f;
+                real = Math.Clamp(real, 0f, 1f);
                 Calculation();
             }
         }
-        public override void Calculation()
-        {
-            base.Calculation();
-            CalculateBarLength();
-            if (oldMovableX != ViewMovableX)
-            {
-                float newValue;
-                try
-                {
-                    newValue = ViewMovableX / oldMovableX;
-                }
-                catch
-                {
-                    WheelValue = 0;
-                    return;
-                }
-                ForceWheel(WheelValue / newValue);
-                oldMovableX = ViewMovableX;
-            }
-            InnerRec = InnerRec.Order(InnerLeft + (int)(WheelValue * (InnerWidth - InnerRec.Width)), InnerTop);
-        }
-        public void ForceWheel(float value)
-        {
-            waitToWheelValue = realWheelValue = Math.Clamp(value, 0, 1);
-        }
         public override void DrawSelf(SpriteBatch sb)
         {
-            DrawBar(sb, Tex, HitBox(), Color.White);
-            DrawBar(sb, innerTex, InnerRec, Color.White);
+            if (drawBorder) DrawBar(sb, Tex, HitBox(), Color.White);
+            if (ViewMovableX > 0) DrawBar(sb, innerTex, InnerRec, Color.White * alpha);
         }
         private void DrawBar(SpriteBatch spriteBatch, Texture2D tex, Rectangle rec, Color color)
         {

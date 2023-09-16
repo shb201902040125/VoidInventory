@@ -4,6 +4,7 @@
     {
         public Texture2D Tex;
         public Color color;
+        public bool drawBoeder = true;
         public float opacity = 0.5f;
         public int? cornerSize;
         public int barSize;
@@ -33,7 +34,7 @@
             Rectangle rec = HitBox();
             if (cornerSize.HasValue)
             {
-                VanillaDraw(sb, rec, border, Color.Black, cornerSize.Value, barSize);
+                if (drawBoeder) VanillaDraw(sb, rec, border, Color.Black, cornerSize.Value, barSize);
                 VanillaDraw(sb, rec, Tex, color * opacity, cornerSize.Value, barSize);
                 return;
             }

@@ -234,7 +234,7 @@ namespace VoidInventory.UISupport.UIElements
                     }
                     sb.DrawString(font, cursorSym, Info.Location + new Vector2(x - symOffsetX, offsetY) + offset, _color);
                 }
-                sb.DrawString(font, text, Info.Location + new Vector2(0f, offsetY) + offset, _color);
+                sb.DrawString(font, text, Info.Location + new Vector2(0f, offsetY)/* + offset*/, _color);
                 offsetY += font.LineSpacing;
             }
 

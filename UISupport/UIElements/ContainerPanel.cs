@@ -31,7 +31,7 @@ namespace VoidInventory.UISupport.UIElements
             {
                 float maxX = Math.Max(innerPanelMinLocation.X, innerPanelMaxLocation.X - _innerPanel.Info.TotalSize.X);
                 float maxY = Math.Max(innerPanelMinLocation.Y, innerPanelMaxLocation.Y - _innerPanel.Info.TotalSize.Y);
-                return new(maxX, maxY);
+                return new((int)Math.Round(maxX), (int)Math.Round(maxY));
             }
         }
         public UIContainerPanel()
@@ -109,7 +109,6 @@ namespace VoidInventory.UISupport.UIElements
             if (flag)
             {
                 Calculation();
-                CalculationScroll();
             }
             return flag;
         }
@@ -119,20 +118,13 @@ namespace VoidInventory.UISupport.UIElements
             if (flag)
             {
                 Calculation();
-                CalculationScroll();
             }
             return flag;
         }
         public void ClearAllElements()
         {
             _innerPanel.ChildrenElements.Clear();
-            CalculationScroll();
             Calculation();
-        }
-        public void CalculationScroll()
-        {
-            Hscroll?.Calculation();
-            Vscroll.Calculation();
         }
         private void CalculationInnerPanelSize()
         {
@@ -172,6 +164,8 @@ namespace VoidInventory.UISupport.UIElements
             base.Calculation();
             CalculationInnerPanelSize();
             _innerPanel.Calculation();
+            Hscroll?.Calculation();
+            Vscroll?.Calculation();
         }
     }
 }

@@ -51,6 +51,7 @@ namespace VoidInventory.Content
             left = new(0, 0);
             left.SetSize(-40, -102, 1, 1);
             left.SetPos(20, 82);
+            left.drawBoeder = false;
             bg.Register(left);
 
             leftView = new();
@@ -60,6 +61,7 @@ namespace VoidInventory.Content
                 if (item.type > ItemID.None && item.stack > 0)
                 {
                     Inv.Merge(ref Main.mouseItem);
+                    SoundEngine.PlaySound(SoundID.Grab);
                     if (item.type == focusType)
                         RefreshRight();
                 }
@@ -69,6 +71,7 @@ namespace VoidInventory.Content
             fbg = new(10 + 11 * 35, 40);
             fbg.Info.SetMargin(5);
             fbg.SetPos(20, 42);
+            fbg.drawBoeder = false;
             bg.Register(fbg);
 
             int[] fs = new int[] { 0, 2, 8, 4, 7, 1, 9, 3, 6, 5, 10 };
@@ -80,7 +83,7 @@ namespace VoidInventory.Content
             }
 
             UIPanel inputbg = new(160 + 24, 30, 12, 4, Color.White, 1f);
-            inputbg.SetPos(-inputbg.Width - 20, 20 + 10, 1);
+            inputbg.SetPos(-inputbg.Width - 20, 42, 1);
             bg.Register(inputbg);
 
             input = new("搜索背包物品", color: Color.Black);
@@ -96,6 +99,7 @@ namespace VoidInventory.Content
             right = new(0, 0);
             right.SetSize(-40, -102, 0.5f, 1);
             right.SetPos(20, 82, 0.5f);
+            right.drawBoeder = false;
             bg.Register(right);
 
             rightView = new();
@@ -113,7 +117,11 @@ namespace VoidInventory.Content
             if (focusType > 0 && timer > 0)
             {
                 left.Info.Width.Percent = MathF.Pow(--timer / 30f, 3f) / 2f + 0.5f;
-                if (timer == 0) right.Info.IsVisible = true;
+                if (timer == 0)
+                {
+                    right.Info.IsVisible = true;
+                    SoundEngine.PlaySound(SoundID.MenuOpen);
+                }
                 left.Calculation();
                 RefreshLeft();
             }
@@ -121,13 +129,9 @@ namespace VoidInventory.Content
             else if (focusType == 0 && timer < 30)
             {
                 left.Info.Width.Percent = MathF.Pow(++timer / 30f, 0.33f) / 2f + 0.5f;
-                Reversal(ref right.Info.IsVisible, true);
+                Reversal(ref right.Info.IsVisible, true,(open) => SoundEngine.PlaySound(SoundID.MenuClose));
                 left.Calculation();
                 RefreshLeft();
-            }
-            if (focusType > 0)
-            {
-                Main.NewText((InvItems.Count, InvItems[focusType].Count));
             }
         }
         public override void OnSaveAndQuit()
@@ -142,6 +146,7 @@ namespace VoidInventory.Content
         {
             if (leftView != null)
             {
+                SoundEngine.PlaySound(SoundID.MenuTick);
                 if (sortOnly is null or false)
                 {
                     List<Predicate<Item>> matchs = new();
@@ -196,6 +201,7 @@ namespace VoidInventory.Content
         public void RefreshRight()
         {
             if (focusType == 0) return;
+            SoundEngine.PlaySound(SoundID.MenuOpen);
             rightView.ClearAllElements();
             int count = 0;
             foreach (Item item in InvItems[focusType])
@@ -297,7 +303,7 @@ namespace VoidInventory.Content
                 ref Item i = ref Main.mouseItem;
                 if (takeSpeed == 0 || (takeTime % takeSpeed == 0 && takeSpeed < 10))
                 {
-                    SoundEngine.PlaySound(SoundID.Coins);
+                    SoundEngine.PlaySound(SoundID.Grab);
                     for (int j = 0; j < takeStack; j++)
                     {
                         if (i.stack == i.maxStack || item.stack == 0)

@@ -87,6 +87,7 @@ namespace VoidInventory.Content
             left = new(0, 0);
             left.SetSize(-40, -102, 0.5f, 1);
             left.SetPos(20, 82);
+            left.drawBoeder = false;
             bg.Register(left);
 
             leftView = new();
@@ -99,6 +100,7 @@ namespace VoidInventory.Content
             right = new(0, 0);
             right.SetSize(-40, -102, 0.5f, 1);
             right.SetPos(20, 82, 0.5f);
+            right.drawBoeder = false;
             bg.Register(right);
 
             rightView = new();
@@ -112,6 +114,7 @@ namespace VoidInventory.Content
             dbg.SetPos(0, 0, 0.1f, 0.35f);
             dbg.Info.IsVisible = false;
             dbg.CanDrag = true;
+            dbg.Info.IsSensitive = true;
             Register(dbg);
 
             detail = new();
@@ -161,7 +164,7 @@ namespace VoidInventory.Content
             }
 
             int x = 0, y = 0;
-            foreach (Recipe r in recipes)
+            foreach (Recipe r in recipes/*FindContainedRecipes(type, new())*/)
             {
                 if (r.createItem.type == ItemID.None)
                 {
@@ -201,7 +204,6 @@ namespace VoidInventory.Content
             UIRecipeTask task = recipe is RecipeTask rt
                 ? new(rt)
                 : (global::VoidInventory.Content.UIRecipeTask)(recipe is Recipe r ? new(r) : throw new Exception(recipe.GetType().Name + " is not accept"));
-            task.id = TaskCount;
             task.SetSize(-30, 52, 1);
             task.SetPos(0, TaskCount * 62);
             leftView.AddElement(task);
@@ -214,19 +216,40 @@ namespace VoidInventory.Content
                 AddRecipeTask(rt);
             }
         }
-        public void SortRecipeTask(int id)
+        public void SortRecipeTask()
         {
-            foreach (UIRecipeTask task in leftView.InnerUIE.Cast<UIRecipeTask>())
+            int count = 0;
+            foreach (BaseUIElement task in leftView.InnerUIE)
             {
-                if (task.id > id)
+                task.id = count;
+                task.Info.Top.Pixel = count++ * 62;
+            }
+            leftView.forceUpdateY = true;
+            leftView.Calculation();
+        }
+        public static List<Recipe> FindContainedRecipes(int type, Dictionary<int, Recipe> ignore = null)
+        {
+            List<Recipe> recipes = new();
+            ignore ??= new();
+            foreach (Recipe r in Main.recipe)
+            {
+                if (r.ContainsIngredient(type) && !ignore.ContainsKey(r.RecipeIndex))
                 {
-                    task.id--;
-                    task.Info.Top.Pixel -= 62;
+                    recipes.Add(r);
+                    ignore.Add(r.RecipeIndex, r);
                 }
             }
-            leftView.Calculation();
-            leftView.Vscroll.Calculation();
-            leftView.forceUpdateY = true;
+            if (recipes.Count > 0)
+            {
+                List<Recipe> above = new();
+                foreach (Recipe r in recipes)
+                {
+                    var result = FindContainedRecipes(r.createItem.type, ignore);
+                    above.AddRange(result);
+                }
+                recipes.AddRange(above);
+            }
+            return recipes;
         }
     }
 }

@@ -1,4 +1,6 @@
-﻿namespace VoidInventory.UISupport.UIElements
+﻿using Terraria.Audio;
+
+namespace VoidInventory.UISupport.UIElements
 {
     public delegate bool CheckPutSlotCondition(Item mouseItem);
     public delegate void ExchangeItemHandler(BaseUIElement target);
@@ -103,7 +105,7 @@
                         PickItem();
 
                         //触发放物品声音
-                        //SoundEngine.PlaySound(7, -1, -1, 1, 1f, 0.0f);
+                        SoundEngine.PlaySound(SoundID.Grab);
                     }
                 }
                 //当鼠标有物品，框里没物品的时候
@@ -121,7 +123,7 @@
                         PutItem();
 
                         //触发放物品声音
-                        //SoundEngine.PlaySound(7, -1, -1, 1, 1f, 0.0f);
+                        SoundEngine.PlaySound(SoundID.Grab);
                     }
                 }
                 //当鼠标和框都有物品时
@@ -175,7 +177,7 @@
                     ExchangeItem();
 
                     //触发放物品声音
-                    //SoundEngine.PlaySound(7, -1, -1, 1, 1f, 0.0f);
+                    SoundEngine.PlaySound(SoundID.Grab);
                 }
                 //反之
                 else

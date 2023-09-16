@@ -82,8 +82,7 @@ namespace VoidInventory.Content
             remove.Events.OnLeftClick += evt =>
             {
                 ParentElement.Remove(this);
-                RTUI ui = VoidInventory.Ins.uis.Elements[RTUI.NameKey] as RTUI;
-                ui.SortRecipeTask(id);
+                RTUI.RT.SortRecipeTask();
                 inv.recipeTasks.Remove(RT);
             };
             Register(remove);
