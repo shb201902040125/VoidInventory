@@ -45,44 +45,6 @@ namespace VoidInventory.Reverse
                 }
             }
         }
-        public static List<int> GetSubMaterials(int type, int depth = -1)
-        {
-            List<int> result = new();
-            if (!_nodes.ContainsKey(type))
-            {
-                return result;
-            }
-            PrepareItemNodeMap();
-            Stack<ItemNode> stack = new();
-            HashSet<int> visited = new();
-            ItemNode node = _nodes[type];
-            stack.Push(node);
-            while (stack.Count > 0)
-            {
-                node = stack.Pop();
-                if (visited.Contains(node.type))
-                {
-                    continue;
-                }
-
-                visited.Add(node.type);
-                result.Add(node.type);
-
-                if (depth != 0)
-                {
-                    foreach (ItemNode child in node.Materials)
-                    {
-                        stack.Push(child);
-                    }
-
-                    if (depth > 0)
-                    {
-                        depth--;
-                    }
-                }
-            }
-            return result;
-        }
         public static bool TryGetRecipeAsMaterial(int type, out List<Recipe> recipes)
         {
             recipes = new();

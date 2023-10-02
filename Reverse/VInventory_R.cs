@@ -7,8 +7,8 @@ namespace VoidInventory.Reverse
     public class VInventory_R
     {
         internal readonly Dictionary<int, List<Item>> _storge = new();
-        private readonly Dictionary<int, int> _tileMap = new();
-        private List<RecipeTask_R> _tasks = new();
+        internal readonly Dictionary<int, int> _tileMap = new();
+        internal List<RecipeTask_R> _tasks = new();
         public bool HasWater { get; private set; }
         public bool HasLava { get; private set; }
         public bool HasHoney { get; private set; }
@@ -40,8 +40,7 @@ namespace VoidInventory.Reverse
                 MergeToEmptySlot(processing);
             }
         }
-
-        private void MergeToEmptySlot(Item item)
+        internal void MergeToEmptySlot(Item item)
         {
             List<Item> heldItems = new();
             while (item.stack > item.maxStack)
@@ -55,7 +54,7 @@ namespace VoidInventory.Reverse
             _storge[item.type] = heldItems;
         }
 
-        private static void Combine(List<Item> combineList)
+        internal static void Combine(List<Item> combineList)
         {
             if (combineList.Count < 2)
             {
@@ -123,7 +122,7 @@ namespace VoidInventory.Reverse
             }
         }
 
-        private void RefreshTileMap()
+        internal void RefreshTileMap()
         {
             _tileMap.Clear();
             foreach (KeyValuePair<int, List<Item>> pair in _storge)
@@ -164,7 +163,7 @@ namespace VoidInventory.Reverse
             }
         }
 
-        private void TryFinishRecipeTask()
+        internal void TryFinishRecipeTask()
         {
             RefreshTileMap();
             foreach (RecipeTask_R task in _tasks)
@@ -185,7 +184,7 @@ namespace VoidInventory.Reverse
             return _storge.TryGetValue(type, out List<Item> items) && items.Sum(i => i.stack) > 0;
         }
 
-        private bool HasItem(int type, out List<Item> heldItems)
+        internal bool HasItem(int type, out List<Item> heldItems)
         {
             return _storge.TryGetValue(type, out heldItems) && heldItems.Sum(i => i.stack) > 0;
         }
@@ -220,7 +219,7 @@ namespace VoidInventory.Reverse
                 }
             }
         }
-        private void Load_0001(TagCompound tag)
+        internal void Load_0001(TagCompound tag)
         {
             _storge.Clear();
             if (tag.TryGet(nameof(_storge), out List<Item> items))
@@ -297,7 +296,7 @@ namespace VoidInventory.Reverse
         }
         internal class Hook
         {
-            private static bool loaded;
+            internal static bool loaded;
             internal static void LoadCurrencyHook()
             {
                 if (loaded)
@@ -308,12 +307,12 @@ namespace VoidInventory.Reverse
                 On_Player.PayCurrency += On_Player_PayCurrency;
                 loaded = true;
             }
-            private static bool On_Player_PayCurrency(On_Player.orig_PayCurrency orig, Player self, long price, int customCurrency)
+            internal static bool On_Player_PayCurrency(On_Player.orig_PayCurrency orig, Player self, long price, int customCurrency)
             {
                 return BuyItem(self, price, customCurrency, true);
             }
 
-            private static bool On_Player_CanAfford(On_Player.orig_CanAfford orig, Player self, long price, int customCurrency)
+            internal static bool On_Player_CanAfford(On_Player.orig_CanAfford orig, Player self, long price, int customCurrency)
             {
                 return BuyItem(self, price, customCurrency, false);
             }
@@ -327,7 +326,7 @@ namespace VoidInventory.Reverse
                 On_Player.PayCurrency -= On_Player_PayCurrency;
                 loaded = false;
             }
-            private static bool BuyItem(Player self, long price, int customCurrency, bool realPay)
+            internal static bool BuyItem(Player self, long price, int customCurrency, bool realPay)
             {
                 VInventory_R inv = self.GetModPlayer<VIPlayer_R>().vInventory;
                 Dictionary<int, int> valueMap;
